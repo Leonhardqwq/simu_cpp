@@ -20,7 +20,7 @@ void test_hit_time(){
 }
 
 void test_x(){
-    PositionCalculator cal(ZombieType::Digger, M, false, {1465}, {});
+    PositionCalculator cal(ZombieType::Digger, M, false, {1467}, {});
     cal.type_cal = PositionCalculator::TypeCal::FASTEST;
 
     cal.init();
