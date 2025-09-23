@@ -75,7 +75,7 @@ void myquery(int ice){
     auto prob = digger_prob(ice);
     for(int i=0;i<prob.size();i++)
         if(prob[i]!=0){
-            printf("Earliest eating time: %d\n", i);
+            printf("Min value: %d\n", i);
             break;
         }
 }
