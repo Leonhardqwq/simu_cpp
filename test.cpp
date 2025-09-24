@@ -20,7 +20,7 @@ void test_hit_time(){
 }
 
 void test_x(){
-    PositionCalculator cal(ZombieType::Digger, M, false, {1467}, {});
+    PositionCalculator cal(ZombieType::JackInTheBox, M, false, {1}, {});
     cal.type_cal = PositionCalculator::TypeCal::FASTEST;
 
     cal.init();
@@ -63,8 +63,8 @@ void test_x_extrem(){
 // 多线程加速版本
 void test_x_extrem_mt() {
     ///
-    PositionCalculator cal(ZombieType::Pogo, M, false, {1}, {});
-    cal.type_cal = PositionCalculator::TypeCal::SLOWEST;
+    PositionCalculator cal(ZombieType::Ladder, M, false, {1}, {});
+    cal.type_cal = PositionCalculator::TypeCal::FASTEST;
     //
 
     auto v_range = cal.z.speed;
@@ -137,8 +137,8 @@ void test_x_extrem_mt() {
 }
 
 int main(){
-    test_x();
-    // test_x_extrem_mt();
+    // test_x();
+    test_x_extrem_mt();
     // test_hit_time();
     
     // auto res =  wilson_confidence_interval(0,1000000);

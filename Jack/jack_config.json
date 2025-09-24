@@ -1,31 +1,27 @@
 {
-  "num_test": 100000000,
+  "num_test": 10000000,
   "show_progress": true,
   "test_type_zombie": 0,
   "test_type_plant": 0,
   "hugewave": false,
-  "scene": 1,
+  "scene": 0,
   "boom_type": 1,
-  "boom_col": 6,
+  "boom_col": 7,
   "defense_type": 0,
-  "jack_type": 1,
+  "jack_type": 0,
   "ice_t": [
-    783
+    300
   ],
-  "splash_t": [],
+  "splash_t": [
+    200
+  ],
   "melon": 0,
-  "ash_time": 8000,
+  "ash_time": 1570,
   "ash_range": [
     100,
-    100
+    900
   ],
   "ash_type_card": true,
-  "vulnerable_time": 0,
-  "plant_list": [
-    [
-      6,
-      0,
-      0
-    ]
-  ]
+  "vulnerable_time": 1271,
+  "plant_list": []
 }
