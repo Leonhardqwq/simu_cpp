@@ -1,14 +1,12 @@
 {
-  "num_test": 1000000,
-  "show_progress": false,
+  "num_test": 10000000,
+  "show_progress": true,
   "type": 9,
-  "test_type_zombie": 1,
-  "test_type_plant": 2,
+  "test_type_zombie": 0,
+  "test_type_plant": 0,
   "hugewave": false,
   "M": 3000,
-  "ice_t": [
-    1464
-  ],
+  "ice_t": [],
   "splash_t": [],
   "melon": 0,
   "extra_dmg": 0,
@@ -20,7 +18,7 @@
   "ash_type_card": true,
   "plant_list": [
     [
-      2,
+      1,
       0,
       0
     ]

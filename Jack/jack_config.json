@@ -7,10 +7,10 @@
   "scene": 1,
   "boom_type": 0,
   "boom_col": 6,
-  "defense_type": 0,
+  "defense_type": 1,
   "jack_type": 0,
   "ice_t": [
-    395
+    783
   ],
   "splash_t": [],
   "melon": 0,
@@ -25,7 +25,12 @@
     [
       6,
       0,
-      0
+      1
+    ],
+    [
+      5,
+      0,
+      1
     ]
   ]
 }
