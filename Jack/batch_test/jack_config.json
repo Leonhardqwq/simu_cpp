@@ -1,17 +1,15 @@
 {
-  "num_test": 2000000,
+  "num_test": 100000,
   "show_progress": true,
   "test_type_zombie": 0,
   "test_type_plant": 0,
   "hugewave": false,
-  "scene": 1,
-  "boom_type": 1,
+  "scene": 0,
+  "boom_type": 0,
   "boom_col": 6,
   "defense_type": 0,
-  "jack_type": 1,
-  "ice_t": [
-    783
-  ],
+  "jack_type": 0,
+  "ice_t": [],
   "splash_t": [],
   "melon": 0,
   "ash_time": 8000,
@@ -25,6 +23,21 @@
     [
       6,
       0,
+      1
+    ],
+    [
+      5,
+      0,
+      1
+    ],
+    [
+      3,
+      1,
+      1
+    ],
+    [
+      4,
+      1,
       1
     ]
   ]
