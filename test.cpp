@@ -63,8 +63,8 @@ void test_x_extrem(){
 // 多线程加速版本
 void test_x_extrem_mt() {
     ///
-    PositionCalculator cal(ZombieType::GigaGargantuar, M, false, {1}, {});
-    cal.type_cal = PositionCalculator::TypeCal::SLOWEST;
+    PositionCalculator cal(ZombieType::JackInTheBox, M, true, {1}, {});
+    cal.type_cal = PositionCalculator::TypeCal::FASTEST;
     //
 
     auto v_range = cal.z.speed;
