@@ -168,6 +168,60 @@ void test_smash_rate(){
     std::cout<<res.first*100<<"% ~ "<<res.second*100<<"%"<<std::endl;
 }
 
+
+void test_smash_rate_mt() {
+    int n_trials = 100000000;
+    int n_threads = std::thread::hardware_concurrency();
+    if (n_threads == 0) n_threads = 4; // fallback
+
+    std::atomic<int> n_success(0);
+    std::atomic<int> finished(0);
+
+    vector<int> walk_times = {
+        225 + 601,
+        601 - 105 - 34 +  601 - 134
+    };
+
+    std::vector<std::thread> threads;
+    for (int t = 0; t < n_threads; ++t) {
+        threads.emplace_back([&, t]() {
+            int local_trials = n_trials / n_threads;
+            if (t == n_threads - 1) local_trials += n_trials % n_threads;
+            int local_success = 0;
+            PositionCalculator cal(ZombieType::Gargantuar, M, false, {}, {});
+            for (int i = 0; i < local_trials; ++i) {
+                cal.init();
+                cal.calculate_position();
+                float x_end = cal.x[walk_times[0]];
+                for (int j = 1; j < walk_times.size(); ++j) {
+                    cal.init();
+                    cal.calculate_position();
+                    auto x_delta = cal.x[walk_times[j]] - cal.x[0];
+                    x_end += x_delta;
+                }
+                if (int(x_end) <= 510)
+                    local_success++;
+                if (i % 10000 == 0) {
+                    finished += 10000;
+                }
+            }
+            n_success += local_success;
+        });
+    }
+
+    while (finished < n_trials) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        printf("%5.2f%%\n", 100.0 * finished.load() / n_trials);
+        fflush(stdout);
+    }
+    for (auto& th : threads) th.join();
+
+    printf("Smash Rate: %f%%\n", static_cast<float>(n_success) * 100.0f / static_cast<float>(n_trials));
+    auto res = wilson_confidence_interval(1.0 * n_success / n_trials, n_trials);
+    std::cout << res.first * 100 << "% ~ " << res.second * 100 << "%" << std::endl;
+}
+
+
 void test_T(){
     PositionCalculator cal(ZombieType::Gargantuar, M, false, {}, {});
     cal.init();
@@ -200,10 +254,11 @@ int main(){
     // test_x();
     // test_x_extrem_mt();
     // test_hit_time();
-    // test_smash_rate();
-    test_T();
+    test_smash_rate_mt();
+    // test_T();
 
 
     // test_tmp();
+
     return 0;
 }
