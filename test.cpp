@@ -11,7 +11,7 @@
 # include "inc/calculate_hit_time.hpp"
 # include "inc/util.hpp"
 using namespace std;
-const int M = 5000;
+const int M = 1000;
 
 void test_hit_time(){
     HitTimeCalculator cal(PlantType::Gloomshroom, M);
@@ -21,11 +21,11 @@ void test_hit_time(){
 
 void test_x(){
     PositionCalculator cal(ZombieType::JackInTheBox, M, false, {1}, {});
-    cal.type_cal = PositionCalculator::TypeCal::FASTEST;
+    // cal.type_cal = PositionCalculator::TypeCal::FASTEST;
 
     cal.init();
     cal.v0 = cal.z.speed.second;
-    cal.calculate_position();
+    // cal.calculate_position();
     write_vector_to_csv(cal.x, "output.csv");
     printf("%d %d\n", cal.t_enter,cal.res);
 }
@@ -63,8 +63,8 @@ void test_x_extrem(){
 // 多线程加速版本
 void test_x_extrem_mt() {
     ///
-    PositionCalculator cal(ZombieType::JackInTheBox, M, true, {1}, {});
-    cal.type_cal = PositionCalculator::TypeCal::FASTEST;
+    PositionCalculator cal(ZombieType::GigaGargantuar, M, false, {1}, {});
+    cal.type_cal = PositionCalculator::TypeCal::SLOWEST;
     //
 
     auto v_range = cal.z.speed;
@@ -136,11 +136,46 @@ void test_x_extrem_mt() {
     write_vector_to_csv(x, "output.csv",true);
 }
 
+// 简易砸率计算器
+void test_smash_rate(){
+    int n_trials = 100000;
+    int n_success = 0;
+    vector<int> walk_times = {
+        225 + 601,
+        601 - 105 - 34 +  601 - 134
+    };
+    PositionCalculator cal(ZombieType::Gargantuar, M, false, {}, {});
+    for (int i = 0; i < n_trials; ++i) {
+        cal.init();
+        cal.calculate_position();
+        // 845 - 335 = 510
+        float x_end = cal.x[walk_times[0]];
+        for (int j = 1; j < walk_times.size(); ++j) {
+            cal.init();
+            cal.calculate_position();
+            auto x_delta = cal.x[walk_times[j]] - cal.x[0];
+            x_end += x_delta;
+        }
+        // printf("%f\n", x_end);
+        if (i % 10000 == 0) {
+            printf("Trial %d / %d\n", i, n_trials);
+        }
+        if (int(x_end) <= 510)
+            n_success++;
+    }
+    printf("Smash Rate: %f%%\n", static_cast<float>(n_success) * 100.0f / static_cast<float>(n_trials));
+    auto res =  wilson_confidence_interval(1.0*n_success/n_trials,n_trials);
+    std::cout<<res.first*100<<"% ~ "<<res.second*100<<"%"<<std::endl;
+
+}
+
+
 int main(){
     // test_x();
-    test_x_extrem_mt();
+    // test_x_extrem_mt();
     // test_hit_time();
-    
+    test_smash_rate();
+
     // auto res =  wilson_confidence_interval(0,1000000);
     // std::cout<<res.first*100<<"% ~ "<<res.second*100<<"%"<<std::endl;
 
