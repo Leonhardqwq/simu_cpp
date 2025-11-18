@@ -11,7 +11,7 @@
 # include "inc/calculate_hit_time.hpp"
 # include "inc/util.hpp"
 using namespace std;
-const int M = 1000;
+const int M = 2000;
 
 void test_hit_time(){
     HitTimeCalculator cal(PlantType::Gloomshroom, M);
@@ -138,7 +138,7 @@ void test_x_extrem_mt() {
 
 // 简易砸率计算器
 void test_smash_rate(){
-    int n_trials = 100000;
+    int n_trials = 1000000;
     int n_success = 0;
     vector<int> walk_times = {
         225 + 601,
@@ -166,16 +166,23 @@ void test_smash_rate(){
     printf("Smash Rate: %f%%\n", static_cast<float>(n_success) * 100.0f / static_cast<float>(n_trials));
     auto res =  wilson_confidence_interval(1.0*n_success/n_trials,n_trials);
     std::cout<<res.first*100<<"% ~ "<<res.second*100<<"%"<<std::endl;
-
 }
 
+void test_T(){
+    PositionCalculator cal(ZombieType::Gargantuar, M, false, {}, {});
+    cal.init();
+    cal.v0 = (cal.z.speed.first+cal.z.speed.second)/2.0f;
+    cal.v0 = cal.z.speed.first;
+    cal.calculate_position();
 
-int main(){
-    // test_x();
-    // test_x_extrem_mt();
-    // test_hit_time();
-    test_smash_rate();
+    auto fps = cal.z.n_frames/cal.z.total_x*cal.v0*47;
+    auto T = int(ceil(1.0f / static_cast<float>(fps*double(0.01f)/cal.z.n_frames)));
 
+    std::cout<<T<<std::endl;
+    std::cout<<- cal.x[T] + cal.x[0];
+}
+
+void test_tmp(){
     // auto res =  wilson_confidence_interval(0,1000000);
     // std::cout<<res.first*100<<"% ~ "<<res.second*100<<"%"<<std::endl;
 
@@ -186,6 +193,17 @@ int main(){
     for(int i=1;i<=169;i++) p+=dlt1;
     for(int i=1;i<=363;i++) p+=dlt2;
 
-    cout<<p;
+    // cout<<p;
+}
+
+int main(){
+    // test_x();
+    // test_x_extrem_mt();
+    // test_hit_time();
+    // test_smash_rate();
+    test_T();
+
+
+    // test_tmp();
     return 0;
 }
