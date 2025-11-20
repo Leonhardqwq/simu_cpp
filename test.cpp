@@ -31,8 +31,8 @@ void test_x(){
 }
 
 void test_x_extrem(){
-    PositionCalculator cal(ZombieType::JackInTheBox, M, false, {1}, {});
-    cal.type_cal = PositionCalculator::TypeCal::SLOWEST;
+    PositionCalculator cal(ZombieType::JackInTheBox, M, false, {96}, {});
+    cal.type_cal = PositionCalculator::TypeCal::FASTEST;
     
     auto v_range = cal.z.speed;
     auto v_ull_start = bit_cast<uint32_t>(static_cast<float>(v_range.first));
@@ -63,8 +63,8 @@ void test_x_extrem(){
 // 多线程加速版本
 void test_x_extrem_mt() {
     ///
-    PositionCalculator cal(ZombieType::GigaGargantuar, M, false, {1}, {});
-    cal.type_cal = PositionCalculator::TypeCal::SLOWEST;
+    PositionCalculator cal(ZombieType::JackInTheBox, M, false, {96}, {});
+    cal.type_cal = PositionCalculator::TypeCal::FASTEST;
     //
 
     auto v_range = cal.z.speed;
@@ -252,9 +252,9 @@ void test_tmp(){
 
 int main(){
     // test_x();
-    // test_x_extrem_mt();
+    test_x_extrem_mt();
     // test_hit_time();
-    test_smash_rate_mt();
+    // test_smash_rate_mt();
     // test_T();
 
 
