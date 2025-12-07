@@ -20,13 +20,14 @@ void test_hit_time(){
 }
 
 void test_x(){
-    PositionCalculator cal(ZombieType::JackInTheBox, M, false, {1}, {});
-    // cal.type_cal = PositionCalculator::TypeCal::FASTEST;
+    PositionCalculator cal(ZombieType::Pogo, M, false, {}, {});
+    cal.type_cal = PositionCalculator::TypeCal::SLOWEST;
 
     cal.init();
-    cal.v0 = cal.z.speed.second;
-    // cal.calculate_position();
-    write_vector_to_csv(cal.x, "output.csv");
+    cal.v0 = cal.z.speed.first;
+    cal.x[0] = 780.0f;
+    cal.calculate_position();
+    write_vector_to_csv(cal.x, "output.csv",true);
     printf("%d %d\n", cal.t_enter,cal.res);
 }
 
@@ -63,8 +64,8 @@ void test_x_extrem(){
 // 多线程加速版本
 void test_x_extrem_mt() {
     ///
-    PositionCalculator cal(ZombieType::JackInTheBox, M, false, {96}, {});
-    cal.type_cal = PositionCalculator::TypeCal::FASTEST;
+    PositionCalculator cal(ZombieType::Catapult, M, false, {}, {});
+    cal.type_cal = PositionCalculator::TypeCal::SLOWEST;
     //
 
     auto v_range = cal.z.speed;
@@ -251,8 +252,8 @@ void test_tmp(){
 }
 
 int main(){
-    // test_x();
-    test_x_extrem_mt();
+    test_x();
+    // test_x_extrem_mt();
     // test_hit_time();
     // test_smash_rate_mt();
     // test_T();
