@@ -1,13 +1,13 @@
 {
   "num_test": 1000000,
   "show_progress": true,
-  "type": 15,
+  "type": 14,
   "test_type_zombie": 1,
   "test_type_plant": 0,
   "hugewave": false,
-  "M": 3000,
+  "M": 5000,
   "ice_t": [
-    1
+    40
   ],
   "splash_t": [],
   "melon": 0,

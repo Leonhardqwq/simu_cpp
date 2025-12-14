@@ -1,10 +1,8 @@
 #pragma once
 #include <fstream>
 
-#include <thread>
 #include <atomic>
 #include <chrono>
-#include <vector>
 
 #include "../json.hpp"
 #include "../calculate_position.hpp"

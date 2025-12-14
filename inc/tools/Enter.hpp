@@ -1,8 +1,6 @@
 #pragma once
-#include <cstdio>
 #include <fstream>
 
-#include <thread>
 #include <atomic>
 #include <chrono>
 
