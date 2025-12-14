@@ -5,20 +5,13 @@
   "test_type_zombie": 1,
   "test_type_plant": 0,
   "hugewave": false,
-  "M": 5000,
+  "M": 3000,
   "ice_t": [
     1
   ],
   "splash_t": [],
   "melon": 0,
   "extra_dmg": 0,
-  "ash_infos": [
-    [
-      1728,
-      0,
-      100,
-      900
-    ]
-  ],
+  "ash_infos": [],
   "plant_list": []
 }
