@@ -43,9 +43,13 @@ public:
     int extra_dmg = 0;
 
     // ash param
-    int ash_time = 3000;
-    bool ash_type_card = true;
-    std::pair<int, int> ash_range = {-200, -200};
+    std::vector<std::vector<int>> ash_infos = {
+        // time / type_card / range_left / range_right
+        {3000, 1, -200, -200},
+    };
+    // int ash_time = 3000;
+    // bool ash_type_card = true;
+    // std::pair<int, int> ash_range = {-200, -200};
 
     // plant param
     std::vector<std::vector<int>> plant_list = {    // col / type / work
@@ -76,9 +80,10 @@ public:
         melon = j["melon"];
         extra_dmg = j["extra_dmg"];
 
-        ash_time = j["ash_time"];
-        ash_type_card = j["ash_type_card"];
-        ash_range = j["ash_range"].get<std::pair<int, int>>();
+        ash_infos = j["ash_infos"].get<std::vector<std::vector<int>>>();
+        // ash_time = j["ash_time"];
+        // ash_type_card = j["ash_type_card"];
+        // ash_range = j["ash_range"].get<std::pair<int, int>>();
 
         plant_list = j["plant_list"].get<std::vector<std::vector<int>>>();
     }
@@ -102,9 +107,16 @@ public:
         std::cout << "melon: " << melon << std::endl;
         std::cout << "extra_dmg: " << extra_dmg << std::endl;
 
-        std::cout << "ash_time: " << ash_time << std::endl;
-        std::cout << "ash_type_card: " << ash_type_card << std::endl;
-        std::cout << "ash_range: " << ash_range.first << " " << ash_range.second << std::endl;
+        std::cout << "ash_infos: " << std::endl;
+        for (const auto& info : ash_infos) {
+            std::cout << "  time: " << info[0]
+                      << ", type_card: " << info[1]
+                      << ", range: [" << info[2] << ", " << info[3] << "]"
+                      << std::endl;
+        }
+        // std::cout << "ash_time: " << ash_time << std::endl;
+        // std::cout << "ash_type_card: " << ash_type_card << std::endl;
+        // std::cout << "ash_range: " << ash_range.first << " " << ash_range.second << std::endl;
 
         std::cout << "plant: " << std::endl;
         for (const auto& plant : plant_list) {
@@ -170,24 +182,30 @@ public:
         // 剪枝
         if (zombie.t_enter == -1)   throw std::runtime_error("M is too small");
         // ash
-        if (config.ash_type_card){
-            if (zombie.t_enter >= config.ash_time){
-                auto x_lim = int(zombie.x[config.ash_time-1]);
-                if (x_lim + zombie.z.def_x.first <=800 && 
-                    config.ash_range.first<=x_lim && 
-                    x_lim<=config.ash_range.second)
-                    return false;
+        for (const auto& info : config.ash_infos){
+            int ash_time = info[0];
+            bool ash_type_card = info[1]==1;
+            std::pair<int, int> ash_range = {info[2], info[3]};
+            if (ash_type_card){
+                if (zombie.t_enter >= ash_time){
+                    auto x_lim = int(zombie.x[ash_time-1]);
+                    if (x_lim + zombie.z.def_x.first <=800 && 
+                        ash_range.first<=x_lim && 
+                        x_lim<=ash_range.second)
+                        return false;
+                }
+            }
+            else{
+                if (zombie.t_enter >= ash_time + 1) {
+                    auto x_lim = int(zombie.x[ash_time]);
+                    if (x_lim + zombie.z.def_x.first <=800 && 
+                        ash_range.first<=x_lim && 
+                        x_lim<=ash_range.second)
+                        return false;
+                }
             }
         }
-        else{
-            if (zombie.t_enter >= config.ash_time + 1) {
-                auto x_lim = int(zombie.x[config.ash_time]);
-                if (x_lim + zombie.z.def_x.first <=800 && 
-                    config.ash_range.first<=x_lim && 
-                    x_lim<=config.ash_range.second)
-                    return false;
-            }
-        }
+
         std::vector<bool> shroom_works;
         for (size_t i=0;i<shrooms.size();i++){
             shrooms[i].calculate_hit_time();

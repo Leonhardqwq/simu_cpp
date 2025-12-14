@@ -1,7 +1,7 @@
 {
   "num_test": 10000000,
   "show_progress": true,
-  "test_type_zombie": 0,
+  "test_type_zombie": 1,
   "test_type_plant": 0,
   "hugewave": false,
   "scene": 1,
@@ -14,12 +14,14 @@
   ],
   "splash_t": [],
   "melon": 0,
-  "ash_time": 1305,
-  "ash_range": [
-    100,
-    900
+  "ash_infos": [
+    [
+      1039,
+      0,
+      100,
+      900
+    ]
   ],
-  "ash_type_card": false,
   "vulnerable_time": 0,
   "plant_list": []
 }
