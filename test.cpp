@@ -133,7 +133,7 @@ void test_tmp(){
 
 int main(){
     // test_x(ZombieType::Pogo, 2000, false, {}, {}, PositionCalculator::TypeCal::RANDOM);
-    cal_x_extrem(ZombieType::Gargantuar, M, false, {40}, {}, PositionCalculator::TypeCal::FASTEST, true);
+    cal_x_extrem(ZombieType::Catapult, M, false, {1}, {}, PositionCalculator::TypeCal::SLOWEST, true);
 
 
     // test_hit_time();
