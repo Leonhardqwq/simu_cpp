@@ -120,26 +120,39 @@ void test_T(){
 void test_tmp(){
     // auto res =  wilson_confidence_interval(0,1000000);
     // std::cout<<res.first*100<<"% ~ "<<res.second*100<<"%"<<std::endl;
-
-    float p = 0;
-    auto dlt1 = static_cast<float>(float(12.0)*double(0.01f)/uint32_t(21));
-    auto dlt2 = static_cast<float>(0.5f*float(12.0)*double(0.01f)/uint32_t(21));
-
-    for(int i=1;i<=169;i++) p+=dlt1;
-    for(int i=1;i<=363;i++) p+=dlt2;
-
+    float x = 834.0f;
+    float v = 0.23f;
+    for (int t = 1; t <= 1000; ++t) {
+        x -= v;
+        if (t%100 == 0)
+            std::cout<<x<<std::endl;
+    }
     // cout<<p;
 }
 
 int main(){
-    // test_x(ZombieType::Pogo, 2000, false, {}, {}, PositionCalculator::TypeCal::RANDOM);
-    cal_x_extrem(ZombieType::Catapult, M, false, {1}, {}, PositionCalculator::TypeCal::SLOWEST, true);
-
+    
+///*
+    cal_x_extrem(
+        ZombieType::GigaGargantuar, M, false, 
+        {12}, {}, 
+        PositionCalculator::TypeCal::FASTEST, 
+        true
+    );
+//*/
+/*
+    cal_x(
+        ZombieType::GigaGargantuar, M, false, 
+        {10}, {}, 
+        PositionCalculator::TypeCal::FASTEST,
+        845,
+        0.37f
+    );
+//*/
 
     // test_hit_time();
     // test_smash_rate_mt();
     // test_T();
-
 
     // test_tmp();
 
