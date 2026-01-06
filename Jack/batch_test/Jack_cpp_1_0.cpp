@@ -56,11 +56,12 @@ void test_splash_early(int me_st, int me_en, int t_en=1320){
 
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<std::vector<double>> all_results;
-    for(int i=170;i<=t_en;i+=10){
+    int t_st = 20;
+    for(int i=20;i<=t_en;i+=10){
         printf("%d:\n", i);
         fflush(stdout);
         for(int m=me_st;m<=me_en;m++){
-            if(i==170)    all_results.push_back({});
+            if(i==20)    all_results.push_back({});
             JackConfig tmp = config;
             tmp.splash_t = {i};
             tmp.melon += m-1;
@@ -76,15 +77,15 @@ void test_splash_early(int me_st, int me_en, int t_en=1320){
 
 
 int main() {
-    /*
+    ///*
     test_splash_early(
         1
-        , 3
-        , 700
+        , 1
+        , 200
     );
     //*/
 
-    ///*
+    /*
     test_splash_late(
         5
         ,12
