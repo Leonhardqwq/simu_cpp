@@ -134,9 +134,9 @@ int main(){
     
 ///*
     cal_x_extrem(
-        ZombieType::GigaGargantuar, M, false, 
-        {12}, {}, 
-        PositionCalculator::TypeCal::FASTEST, 
+        ZombieType::JackInTheBox, M, false, 
+        {}, {161}, 
+        PositionCalculator::TypeCal::SLOWEST, 
         true
     );
 //*/

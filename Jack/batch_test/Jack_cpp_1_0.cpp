@@ -57,7 +57,7 @@ void test_splash_early(int me_st, int me_en, int t_en=1320){
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<std::vector<double>> all_results;
     int t_st = 20;
-    for(int i=20;i<=t_en;i+=10){
+    for(int i=20;i<=t_en;i+=1){
         printf("%d:\n", i);
         fflush(stdout);
         for(int m=me_st;m<=me_en;m++){
