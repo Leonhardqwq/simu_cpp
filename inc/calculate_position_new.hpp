@@ -96,6 +96,12 @@ public:
         if (state.is_frozen()) return 0.0f;
         if (state.is_slowed()) return dx * 0.01f * (reanim.fps * 0.5f);
         return dx * 0.01f * reanim.fps;
+        /* 老版本逻辑交换律
+        if (state.is_frozen()) return 0.0f;
+        if (state.is_slowed()) dx *= 0.01f * (reanim.fps * 0.5f);
+        else                   dx *= 0.01f * reanim.fps;
+        return dx;
+        */
     }
     // 常量位移
     static float get_dx_constant(float v0, const CdState& state) {

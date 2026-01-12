@@ -4,7 +4,7 @@
 
 # include <mutex>
 
-# include "inc/calculate_position.hpp"
+# include "inc/calculate_position_new.hpp"
 # include "inc/calculate_hit_time.hpp"
 # include "inc/util.hpp"
 using namespace std;
@@ -120,13 +120,14 @@ void test_T(){
 void test_tmp(){
     // auto res =  wilson_confidence_interval(0,1000000);
     // std::cout<<res.first*100<<"% ~ "<<res.second*100<<"%"<<std::endl;
-    float x = 834.0f;
-    float v = 0.23f;
-    for (int t = 1; t <= 1000; ++t) {
-        x -= v;
-        if (t%100 == 0)
-            std::cout<<x<<std::endl;
-    }
+    rng rng;
+    float dx = rng.randfloat(0.23f,0.37f);
+    float p1 = rng.randfloat(0.1f,0.9f);
+    float p2 = rng.randfloat(0.1f,0.9f);
+    
+    cout<<dx*p1*p2<<endl;
+    dx *= p1*p2;
+    cout<<dx<<endl;
     // cout<<p;
 }
 
@@ -154,7 +155,7 @@ int main(){
     // test_smash_rate_mt();
     // test_T();
 
-    // test_tmp();
+    test_tmp();
 
     return 0;
 }
