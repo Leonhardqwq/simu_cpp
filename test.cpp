@@ -8,7 +8,7 @@
 # include "inc/calculate_hit_time.hpp"
 # include "inc/util.hpp"
 using namespace std;
-const int M = 2000;
+const int M = 7000;
 
 void test_hit_time(){
     HitTimeCalculator cal(PlantType::Gloomshroom, M);
@@ -132,7 +132,7 @@ void test_tmp(){
 
 int main(){
     
-///*
+/*
     cal_x_extrem(
         ZombieType::JackInTheBox, M, false, 
         {}, {161}, 
@@ -140,10 +140,10 @@ int main(){
         true
     );
 //*/
-/*
+///*
     cal_x(
         ZombieType::GigaGargantuar, M, false, 
-        {10}, {}, 
+        {}, {}, 
         PositionCalculator::TypeCal::FASTEST,
         845,
         0.37f

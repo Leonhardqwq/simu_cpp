@@ -225,7 +225,7 @@ private:
                 splash_idx++;
             }
 
-            if (int(x[i]) <= z.threshold && t_enter == -1)   t_enter = i;
+            if (int(x[i-1]) <= z.threshold && t_enter == -1)   t_enter = i;
         }
     }
 
