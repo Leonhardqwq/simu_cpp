@@ -186,6 +186,7 @@ public:
             std::pair<int, int> ash_range = {info[2], info[3]};
             if (ash_type_card){
                 if (zombie.t_enter >= ash_time){
+                    if (ash_time==0) continue;
                     auto x_lim = int(zombie.x[ash_time-1]);
                     if (x_lim + zombie.z.def_x.first <=800 && 
                         ash_range.first<=x_lim && 

@@ -207,6 +207,7 @@ public:
             std::pair<int, int> ash_range = {info[2], info[3]};
             if (ash_type_card){
                 if (jack.res + 110 >= ash_time){
+                    if (ash_time==0) continue; 
                     auto x_lim = std::max(int(jack.x[jack.res-1]), int(jack.x[ash_time-1]));
                     if (x_lim + jack.z.def_x.first <=800 && ash_range.first<=x_lim && x_lim<=ash_range.second){
                         return false;
