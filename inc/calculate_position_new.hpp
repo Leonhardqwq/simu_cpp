@@ -93,13 +93,12 @@ public:
             auto x_each = z.anim[static_cast<unsigned int>(floored_current_frame) - z.begin_frame];            
         */
         float dx = z.anim[static_cast<unsigned int>(reanim.progress*(z.n_frames-1))];
-        /*
         if (state.is_frozen()) return 0.0f;
+        ///* 新版本
         if (state.is_slowed()) return dx * 0.01f * (reanim.fps * 0.5f);
         return dx * 0.01f * reanim.fps;
-        //*/
-        ///* 老版本逻辑交换律
-        if (state.is_frozen()) return 0.0f;
+        //*/ 
+        /* 老版本
         if (state.is_slowed()) dx *= 0.01f * (reanim.fps * 0.5f);
         else                   dx *= 0.01f * reanim.fps;
         return dx;
