@@ -135,19 +135,19 @@ int main(){
     
 /*
     cal_x_extrem(
-        ZombieType::JackInTheBox, M, false, 
-        {}, {161}, 
-        PositionCalculator::TypeCal::SLOWEST, 
+        ZombieType::Zomboni, M, false, 
+        {96}, {}, 
+        PositionCalculator::TypeCal::SLOWEST,
         true
     );
 //*/
 ///*
     cal_x(
-        ZombieType::GigaGargantuar, M, false, 
+        ZombieType::Zomboni, M, false, 
         {}, {}, 
-        PositionCalculator::TypeCal::FASTEST,
-        845,
-        0.37f
+        PositionCalculator::TypeCal::SLOWEST
+        //, 845,
+        //, 0.37f
     );
 //*/
 
