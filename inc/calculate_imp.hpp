@@ -131,10 +131,9 @@ public:
             d2y -= 0.05f;
             dy += d2y;
             x -= dx;
-            auto new_y = get_y_by_row_and_x(scene, row_giga, x) - 30.0f;
-            auto new_dy = dy + new_y - y;
-            y = new_y;
-            dy = new_dy;
+            float diff_y = zombie_init_y(scene, x, row_giga) - y;
+            y += diff_y;
+            dy += diff_y;
             if (dy <= 0) {
                 dy = 0;
                 status = 72;
