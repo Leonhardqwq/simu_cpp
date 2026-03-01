@@ -4,6 +4,9 @@
 #include <cstring>
 #include <fstream>
 
+const int FIXED_FLOAT_N = 10;
+const int NONFIXED_FLOAT_N = 8;
+
 template <typename To, typename From>
 To bit_cast(const From& src) {
     static_assert(sizeof(To) == sizeof(From), "Size mismatch in bitcast");
@@ -17,8 +20,8 @@ void write_vector_to_csv(const std::vector<T>& data, const std::string& filename
     std::ofstream fout(filename);
     if (!fout) return;
     fout << "index,value\n";
-    if (fixed)  fout << std::fixed << std::setprecision(5);
-    else        fout << std::scientific << std::setprecision(8);
+    if (fixed)  fout << std::fixed << std::setprecision(FIXED_FLOAT_N);
+    else        fout << std::scientific << std::setprecision(NONFIXED_FLOAT_N);
     for (size_t i = 0; i < data.size(); ++i) 
         fout << i << "," << data[i] << "\n";
     fout.close();
@@ -34,8 +37,8 @@ void write_2dvector_to_csv(const std::vector<std::vector<T>>& data, const std::s
         fout << ",value" << i;
     fout << "\n";
 
-    if (fixed)  fout << std::fixed << std::setprecision(5);
-    else        fout << std::scientific << std::setprecision(8);
+    if (fixed)  fout << std::fixed << std::setprecision(FIXED_FLOAT_N);
+    else        fout << std::scientific << std::setprecision(NONFIXED_FLOAT_N);
     for (size_t i = 0; i < data[0].size(); ++i) {
         fout << i;
         for (size_t j = 0; j < data.size(); ++j) 
