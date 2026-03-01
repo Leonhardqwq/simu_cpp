@@ -348,3 +348,11 @@ public:
     }
 
 };
+
+enum Scene {
+    DAY,
+    NIGHT,
+    POOL,
+    ROOF
+};
+
