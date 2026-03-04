@@ -6,9 +6,10 @@
 
 # include "inc/calculate_position_new.hpp"
 # include "inc/calculate_hit_time.hpp"
+#include <atomic>
 # include "inc/util.hpp"
 using namespace std;
-const int M = 7000;
+const int M = 20000;
 
 void test_hit_time(){
     HitTimeCalculator cal(PlantType::Gloomshroom, M);
@@ -118,36 +119,31 @@ void test_T(){
 }
 
 void test_tmp(){
-    // auto res =  wilson_confidence_interval(0,1000000);
-    // std::cout<<res.first*100<<"% ~ "<<res.second*100<<"%"<<std::endl;
-    rng rng;
-    float dx = rng.randfloat(0.23f,0.37f);
-    float p1 = rng.randfloat(0.1f,0.9f);
-    float p2 = rng.randfloat(0.1f,0.9f);
-    
-    cout<<dx*p1*p2<<endl;
-    dx *= p1*p2;
-    cout<<dx<<endl;
-    // cout<<p;
+    Reanim reanim(ZombieData(ZombieType::Digger), 0.12f);
+    for (int i = 0; i < 100; ++i) {
+        reanim.update_unconditional();
+        reanim.wrap();
+        std::cout << "i=" << i << " Progress: " << reanim.progress * 36 << std::endl;
+    }
 }
 
 int main(){
     
-/*
+//*
     cal_x_extrem(
-        ZombieType::Zomboni, M, false, 
-        {96}, {}, 
-        PositionCalculator::TypeCal::SLOWEST,
+        ZombieType::Digger, M, false, 
+        {}, {}, 
+        PositionCalculator::TypeCal::FASTEST,
         true
     );
 //*/
-///*
+/*
     cal_x(
-        ZombieType::Zomboni, M, false, 
+        ZombieType::Digger, M, false, 
         {}, {}, 
         PositionCalculator::TypeCal::SLOWEST
-        //, 845,
-        //, 0.37f
+        , 780
+        , 0.68f
     );
 //*/
 
@@ -155,7 +151,7 @@ int main(){
     // test_smash_rate_mt();
     // test_T();
 
-    test_tmp();
+    // test_tmp();
 
     return 0;
 }

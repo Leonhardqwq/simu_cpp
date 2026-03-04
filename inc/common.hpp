@@ -246,6 +246,17 @@ public:
                 };
                 begin_frame = 30;
                 set_anim();break;
+            case ZombieType::Digger:
+                _ground = {      
+                                                        -59.8f, -58.1f, -56.4f, -54.6f,
+                    -52.9f, -50.0f, -47.1f, -44.2f, -41.3f, -39.8f, -38.3f,
+                    -36.7f, -35.2f, -32.6f, -30.0f, -27.5f, -24.9f, -21.8f,
+                    -18.8f, -15.7f, -12.7f, -10.7f, -8.8f, -6.8f, -4.9f,
+                    -3.8f, -2.8f, -1.7f, -0.7f, 0.9f, 2.6f, 4.4f,
+                    6.1f, 7.8f, 9.4f, 11.0f, 12.7f,
+                };
+                begin_frame = 18;
+                set_anim();break;
             case ZombieType::Ladder:
                 _ground = {      
                                             -39.8f, -39.0f, -38.1f, -37.3f,

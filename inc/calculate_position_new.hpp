@@ -5,6 +5,7 @@
 #include <thread>
 #include <cstddef>
 #include <algorithm>
+#include <atomic>
 
 // ==================== 封装工具 ====================
 
@@ -484,14 +485,21 @@ private:
             state.tick();
             // status
             if (state.frozen_cd <= 0 && n_repeated >= 2) {
+                // 固定速度
+                v0 = 0.12f;
+                reanim = Reanim(z, v0);
                 // position
-                stay();
+                float dx = DxCalculator::get_dx_from_ground(z, reanim, state);
+                walk_right(dx);
                 // eat
                 int op = state.get_eat_interval();
                 if (i % op == 0) {
                     if (t_enter == -1) 
                         t_enter = i;
                 }
+                // progress                
+                reanim.update(state);
+                reanim.wrap();
                 i++; break;
             }
             // position
@@ -509,14 +517,19 @@ private:
             // cd
             state.tick();
             // position
-            stay();
+            float dx = DxCalculator::get_dx_from_ground(z, reanim, state);
+            walk_right(dx);
             // eat
-            if (state.frozen_cd > 0) continue;
-            if (t_enter != -1) continue;
-            int op = state.get_eat_interval();
-            if (i % op == 0) {
-                t_enter = i;
+            if (!state.is_frozen() && t_enter==-1) {
+                int op = state.get_eat_interval();
+                if (i % op == 0) {
+                    t_enter = i;
+                }
             }
+            // progress
+            reanim.update(state);
+            reanim.wrap();
+            // std::cout << "i=" << i << " Progress: " << reanim.progress * 36 << std::endl;
         }
     }
 
