@@ -1,20 +1,24 @@
 # include "inc/calculate_imp.hpp"
+#include "inc/common.hpp"
 # include "inc/util.hpp"
+#include <cstdint>
 #include <cstdio>
 #include <iostream>
 #include <utility>
 #include <vector>
+#include <thread>
+#include <atomic>
 
 
 void print_imp(){
     ImpCalculator cal(
         500,    
         Scene::ROOF, 
-        0.0f, 
-        680.9999389648f, 
+        -1, 
+        634.221f, 
         0, 
         CdState{0, 0}, 
-        1
+        0
     );
     cal.init();
     cal.calculate_imp();
@@ -26,7 +30,7 @@ void print_imp(){
 }
 
 void rnd_scan() {
- std::string out_path = "rnd_scan.csv";
+    std::string out_path = "rnd_scan.csv";
     float rnd_start = 0.0f;
     float rnd_end = 100.0f;
     float rnd_step = 0.1f;
@@ -60,56 +64,127 @@ void rnd_scan() {
     std::cout << "Wrote " << results.size() << " rows to " << out_path << "\n";
 }
 
-void calc_extrem(int M = 400) {
-    std::vector<std::vector<float>> extrem_giga(2);
-    extrem_giga[0].resize(M, 1000.0f);
-    extrem_giga[1].resize(M, 0.0f);
+void calc_extrem(Scene scene, int M = 500, bool parallel = false) {
     auto x_ull_start = bit_cast<uint32_t>(400.0f);
-    auto x_ull_end = bit_cast<uint32_t>(854.0f);    
-    for(auto i = x_ull_start+1; i <= x_ull_end; ++i){
-        auto x = bit_cast<float>(i);
-        std::vector<float> ans;
-        for (auto rnd : {0.0f, 100.0f}){
-            ImpCalculator cal(
-                M,    
-                Scene::POOL, // 修改
-                rnd, 
-                x, 
-                0, 
-                CdState{0, 0}, 
-                0
-            );
-            cal.init();
-            cal.calculate_imp();
-            if (cal.res == -1) printf("计算失败\n");
-            auto x_imp = cal.x_ans[cal.res];
-            auto x_int_imp = int(x_imp);
-            if (x < extrem_giga[0][x_int_imp])
-                extrem_giga[0][x_int_imp] = x;
-            if (x > extrem_giga[1][x_int_imp])
-                extrem_giga[1][x_int_imp] = x;
-            ans.push_back(x_imp);
-        }
+    auto x_ull_end = bit_cast<uint32_t>(854.0f);
+    uint32_t total = x_ull_end - x_ull_start;
 
-        if (i% 100000 == 0) {
-            printf("Progress: %.2f%%, x: %.2f, range: %.2f - %.2f\n", (i - x_ull_start) / float(x_ull_end - x_ull_start) * 100, x, ans[0], ans[1]);
-            fflush(stdout);
+    std::vector<float> x_giga(total);
+    std::vector<float> x_min_imp(total);
+    std::vector<float> x_max_imp(total);
+
+    if (!parallel) {
+        std::vector<std::vector<float>> output;
+        for (auto i = x_ull_start + 1; i <= x_ull_end; ++i) {
+            auto x = bit_cast<float>(i);
+            uint32_t idx = i - (x_ull_start + 1);
+            x_giga[idx] = x;
+            for (auto rnd : {0.0f, 100.0f}) {
+                ImpCalculator cal(
+                    M,
+                    scene,
+                    rnd,
+                    x,
+                    0,
+                    CdState{0, 0},
+                    0
+                );
+                cal.init();
+                cal.calculate_imp();
+                if (cal.res == -1) throw std::runtime_error("计算失败");
+                auto x_imp = cal.x_ans[cal.res];
+                if (rnd == 0.0f)
+                    x_min_imp[idx] = x_imp;
+                else
+                    x_max_imp[idx] = x_imp;
+            }
+            if (i % 100000 == 0) {
+                printf("Progress: %.2f%%, x: %.2f, range: %.2f - %.2f\n", (i - x_ull_start) / float(x_ull_end - x_ull_start) * 100, x, x_min_imp.back(), x_max_imp.back());
+                fflush(stdout);
+            }
         }
     }
+    else {
+        unsigned int n_threads = std::thread::hardware_concurrency();
+        if (n_threads == 0) n_threads = 4;
 
-    for (int i = 0; i < 2; ++i) 
-        for (int j = 0; j < M; ++j) 
-            if (extrem_giga[i][j] == 1000.0f) 
-                extrem_giga[i][j] = 0.0f;
-        
+        std::atomic<uint32_t> finished(0);
+        std::vector<std::thread> threads;
+
+        for (unsigned int t = 0; t < n_threads; ++t) {
+            threads.emplace_back([&, t]() {
+                uint32_t start = x_ull_start + 1 + t * total / n_threads;
+                uint32_t end = (t == n_threads - 1)
+                    ? x_ull_end
+                    : x_ull_start + (t + 1) * total / n_threads;
+
+                for (uint32_t i = start; i <= end; ++i) {
+                    auto x = bit_cast<float>(i);
+                    uint32_t idx = i - (x_ull_start + 1);
+                    x_giga[idx] = x;
+                    for (auto rnd : {0.0f, 100.0f}) {
+                        ImpCalculator cal(
+                            M,
+                            scene,
+                            rnd,
+                            x,
+                            0,
+                            CdState{0, 0},
+                            0
+                        );
+                        cal.init();
+                        cal.calculate_imp();
+                        if (cal.res == -1) throw std::runtime_error("计算失败");
+                        auto x_imp = cal.x_ans[cal.res];
+                        if (rnd == 0.0f)
+                            x_min_imp[idx] = x_imp;
+                        else
+                            x_max_imp[idx] = x_imp;
+                    }                    
+                    finished++;
+                }
+            });
+        }
+        while (finished < total) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            printf("%5.2f%%\n", 100.0 * finished.load() / total);
+            fflush(stdout);
+        }
+        for (auto& th : threads) th.join();
+    }
+
+    // std::vector<std::vector<float>> output = {x_giga, x_min_imp, x_max_imp};
+    // write_2dvector_to_csv(output, scene == Scene::ROOF ? "imp_re.csv" : "imp_de.csv", true);
+    // write_2dvector_to_bin(output, "imp.bin");
     
-    write_2dvector_to_csv(extrem_giga, "extrem_giga.csv", true);
+    std::vector<float> x_ans;
+    x_ans.resize(2);
+    x_ans[0].resize(409, 1000.0f);  // min
+    x_ans[1].resize(409, -1000.0f); // max
+    for (size_t i = 0; i < x_giga.size(); ++i) {
+        float x = x_giga[i];
+        for (float x_imp = x_max_imp[i]; x_imp >= x_min_imp[i]; x_imp -= 3.0f) {
+            if (x_imp < x) {
+                ans_max[i] = x_imp + 0.01f;
+                break;
+            }
+        }
+        ans_min[i] = x_min_imp[i];
+        ans_max[i] = x_max_imp[i];
+    }
+
+
 }
 
 int main() {
     // print_imp();
-    calc_extrem(500);
+    calc_extrem(Scene::DAY, 209, true);
     // rnd_scan();
 
     return 0;
 }
+
+/*
+
+
+*/
