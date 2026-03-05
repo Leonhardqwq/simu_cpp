@@ -1,24 +1,31 @@
 {
   "num_test": 10000000,
   "show_progress": true,
-  "type": 6,
+  "type": 9,
   "test_type_zombie": 0,
   "test_type_plant": 0,
   "hugewave": false,
   "M": 5000,
+  "digger_x_target": 140,
   "ice_t": [
-    96
+    1975
   ],
   "splash_t": [],
   "melon": 0,
   "extra_dmg": 0,
   "ash_infos": [
     [
-      95,
-      0,
-      100,
+      6000,
+      1,
+      -100,
       900
     ]
   ],
-  "plant_list": []
+  "plant_list": [
+    [
+      3,
+      0,
+      0
+    ]
+  ]
 }

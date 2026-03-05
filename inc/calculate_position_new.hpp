@@ -244,6 +244,7 @@ public:
         SLOWEST,
     } type_cal;
     int action_cd;  // jack 类外更新
+    int x_target = 40 + 20;   // digger 类外更新, 代表啃食植物防御左限, 默认1列南瓜
 
     // 过程变量
     float v0;
@@ -494,7 +495,7 @@ private:
                 // eat
                 int op = state.get_eat_interval();
                 if (i % op == 0) {
-                    if (t_enter == -1) 
+                    if (int(x[i-1]) + z.atk.second >= x_target && t_enter == -1)
                         t_enter = i;
                 }
                 // progress                
@@ -520,7 +521,7 @@ private:
             float dx = DxCalculator::get_dx_from_ground(z, reanim, state);
             walk_right(dx);
             // eat
-            if (!state.is_frozen() && t_enter==-1) {
+            if (!state.is_frozen() && t_enter==-1 && int(x[i-1]) + z.atk.second >= x_target) {
                 int op = state.get_eat_interval();
                 if (i % op == 0) {
                     t_enter = i;

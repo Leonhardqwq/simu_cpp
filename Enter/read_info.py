@@ -5,7 +5,7 @@ import json
 file_name = 'enter_test_info.xlsx'
 
 ###
-info_read = pd.read_excel(file_name, usecols='B', skiprows=0, nrows=21,header=None)
+info_read = pd.read_excel(file_name, usecols='B', skiprows=0, nrows=22,header=None)
 info_list = info_read.iloc[:,0].tolist()
 
 tmp = info_list[5]
@@ -50,6 +50,7 @@ if tmp == "随机":   test_type_plant = 0
 elif tmp == "最快": test_type_plant = 1
 else:               test_type_plant = 2
 
+digger_x_target = int(info_list[16])
 
 
 ###
@@ -98,6 +99,7 @@ config_dict = {
   "test_type_plant": test_type_plant,
   "hugewave": not not_flag,
   "M": M_sup,
+  "digger_x_target": digger_x_target,
 
   "ice_t": ice_t,
   "splash_t": splash_t,

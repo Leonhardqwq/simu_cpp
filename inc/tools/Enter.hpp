@@ -33,6 +33,7 @@ public:
     bool hugewave = false;
     int M = 4000;
     ZombieType type = ZombieType::Football;
+    int digger_x_targer = 40 + 20;
 
     // effect param
     std::vector<int> ice_t = {551};
@@ -72,6 +73,7 @@ public:
         test_type_plant = j["test_type_plant"];
         hugewave = j["hugewave"];
         M = j["M"];
+        digger_x_targer = j["digger_x_target"];
 
         ice_t = j["ice_t"].get<std::vector<int>>();
         splash_t = j["splash_t"].get<std::vector<int>>();
@@ -138,6 +140,8 @@ public:
     EnterSimulator(const EnterConfig& config) : config(config),
         zombie(config.type, config.M, config.hugewave, config.ice_t, config.splash_t) {
         zombie.type_cal = PositionCalculator::TypeCal(config.test_type_zombie);
+        if (zombie.z.type == ZombieType::Digger) 
+            zombie.x_target = config.digger_x_targer;
         for (const auto& v : config.plant_list) {
             shrooms.push_back(HitTimeCalculator(PlantType(v[1]), config.M));
             shroom_infos.push_back(ShroomInfo{v[0]*80-40, v[2]==1});

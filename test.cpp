@@ -1,8 +1,4 @@
 #include <cstdint>
-# include <fstream>
-# include <iomanip>
-
-# include <mutex>
 
 # include "inc/calculate_position_new.hpp"
 # include "inc/calculate_hit_time.hpp"
@@ -49,7 +45,6 @@ void test_smash_rate(){
     auto res =  wilson_confidence_interval(1.0*n_success/n_trials,n_trials);
     std::cout<<res.first*100<<"% ~ "<<res.second*100<<"%"<<std::endl;
 }
-
 
 void test_smash_rate_mt() {
     int n_trials = 100000000;
@@ -127,9 +122,110 @@ void test_tmp(){
     }
 }
 
+void cal_digger_x_extrem(int M_sup, bool huge_wave, std::vector<int> ice_t,bool parallel = false) {
+    PositionCalculator cal(ZombieType::Digger, M_sup, huge_wave, ice_t, {});
+    cal.type_cal = PositionCalculator::TypeCal::FASTEST;
+
+    auto v_range = cal.z.speed;
+    auto v_ull_start = bit_cast<uint32_t>(static_cast<float>(v_range.first));
+    auto v_ull_end = bit_cast<uint32_t>(static_cast<float>(v_range.second));
+    if (!parallel){
+        std::vector<std::vector<float>> x;
+        x.resize(2);
+        x[0].resize(M_sup, 1000.0f);
+        x[1].resize(M_sup, -1000.0f);
+        for(auto i = v_ull_start; i <= v_ull_end; ++i){
+            for (auto k = 0; k < 40; k++) {
+                cal.init();
+                cal.v0 = bit_cast<float>(i);
+                cal.x[0] = float(int(cal.x[0]) + k);
+                cal.calculate_position();
+                for(int j=0;j<M_sup;j++){
+                    if (cal.x[j] < x[0][j])
+                        x[0][j] = cal.x[j];
+                    if (cal.x[j] > x[1][j])
+                        x[1][j] = cal.x[j];
+                }
+
+                if (i% 10000 == 0) {
+                    printf("%u %u %u\n", v_ull_start, i, v_ull_end);
+                }
+            }
+        }
+        write_2dvector_to_csv(x, "output.csv");
+    }
+    else{
+        uint32_t total = v_ull_end - v_ull_start + 1;
+
+        unsigned int n_threads = std::thread::hardware_concurrency();
+        if (n_threads == 0) n_threads = 4; // fallback
+
+        std::atomic<int> finished(0);
+
+        std::vector<std::vector<std::vector<float>>> x_threads(n_threads);
+        for (auto& x : x_threads) {
+            x.resize(2);
+            x[0].resize(M_sup, 1000.0f);
+            x[1].resize(M_sup, -1000.0f);
+        }
+
+        std::vector<std::thread> threads;
+        for (unsigned int t = 0; t < n_threads; ++t) {
+            threads.emplace_back([&, t]() {
+                /// 
+                PositionCalculator cal_local(cal.z.type, cal.M, cal.huge_wave, cal.ice_t, cal.splash_t);
+                cal_local.type_cal = cal.type_cal;
+                uint32_t start = v_ull_start + t * total / n_threads;
+                uint32_t end = (t == n_threads - 1) ? v_ull_end : v_ull_start + (t + 1) * total / n_threads - 1;
+                for (uint32_t i = start; i <= end; ++i) {
+                    for (auto k = 0; k < 40; k++) {
+                        cal_local.init();
+                        cal_local.v0 = bit_cast<float>(i);
+                        cal_local.x[0] = float(int(cal_local.x[0]) + k);
+                        cal_local.calculate_position();
+                        for(int j=0;j<M_sup;j++){
+                            if (cal_local.x[j] < x_threads[t][0][j])
+                                x_threads[t][0][j] = cal_local.x[j];
+                            if (cal_local.x[j] > x_threads[t][1][j])
+                                x_threads[t][1][j] = cal_local.x[j];
+                        }
+                    }
+                    finished++;
+                }
+            });
+        }
+
+        while (finished < total) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            printf("%5.5f%%\n", 100.0 * finished.load() / total);
+            fflush(stdout);
+        }
+        for (auto& th : threads) th.join();
+
+        // 合并结果
+        std::vector<std::vector<float>> x;
+        x.resize(2);
+        x[0].resize(M_sup, 1000.0f);
+        x[1].resize(M_sup, -1000.0f);
+        
+        for (unsigned int t = 0; t < n_threads; ++t) {
+            for (int j = 0; j < M_sup; ++j) {
+                if (x_threads[t][0][j] < x[0][j]) x[0][j] = x_threads[t][0][j];
+                if (x_threads[t][1][j] > x[1][j]) x[1][j] = x_threads[t][1][j];
+            }
+        }
+        write_2dvector_to_csv(x, "output.csv",true);
+    }
+}
+
 int main(){
+    cal_digger_x_extrem(
+        M, false, 
+        {}, 
+        true
+    );
     
-//*
+/*
     cal_x_extrem(
         ZombieType::Digger, M, false, 
         {}, {}, 
