@@ -8,6 +8,7 @@
 #include <vector>
 #include <thread>
 #include <atomic>
+#include <algorithm>
 
 
 void print_imp(){
@@ -153,27 +154,27 @@ void calc_extrem(Scene scene, int M = 500, bool parallel = false) {
         for (auto& th : threads) th.join();
     }
 
-    // std::vector<std::vector<float>> output = {x_giga, x_min_imp, x_max_imp};
+    std::vector<std::vector<float>> output = {x_giga, x_min_imp, x_max_imp};
     // write_2dvector_to_csv(output, scene == Scene::ROOF ? "imp_re.csv" : "imp_de.csv", true);
-    // write_2dvector_to_bin(output, "imp.bin");
+    // write_2dvector_to_bin(output, scene == Scene::ROOF ? "imp_re.bin" : "imp_de.bin");
     
-    std::vector<float> x_ans;
+    std::vector<std::vector<float>> x_ans;
     x_ans.resize(2);
     x_ans[0].resize(409, 1000.0f);  // min
-    x_ans[1].resize(409, -1000.0f); // max
+    x_ans[1].resize(409, 0.0f); // max
+    int cnt = 0;
     for (size_t i = 0; i < x_giga.size(); ++i) {
         float x = x_giga[i];
         for (float x_imp = x_max_imp[i]; x_imp >= x_min_imp[i]; x_imp -= 3.0f) {
-            if (x_imp < x) {
-                ans_max[i] = x_imp + 0.01f;
-                break;
-            }
+            int x_imp_int = int(x_imp);
+            if (x < x_ans[0][x_imp_int]) 
+                x_ans[0][x_imp_int] = x;
+            if (x > x_ans[1][x_imp_int]) 
+                x_ans[1][x_imp_int] = x;
         }
-        ans_min[i] = x_min_imp[i];
-        ans_max[i] = x_max_imp[i];
     }
-
-
+    std::replace(x_ans[0].begin(), x_ans[0].end(), 1000.0f, 0.0f);
+    // write_2dvector_to_csv(x_ans, scene == Scene::ROOF ? "re.csv" : "de.csv", true);
 }
 
 int main() {
@@ -183,8 +184,3 @@ int main() {
 
     return 0;
 }
-
-/*
-
-
-*/
