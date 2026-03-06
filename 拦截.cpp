@@ -67,7 +67,7 @@ void rnd_scan() {
 
 void calc_extrem(Scene scene, int M = 500, bool parallel = false) {
     auto x_ull_start = bit_cast<uint32_t>(400.0f);
-    auto x_ull_end = bit_cast<uint32_t>(854.0f);
+    auto x_ull_end = bit_cast<uint32_t>(818.0f) - 1;
     uint32_t total = x_ull_end - x_ull_start;
 
     std::vector<float> x_giga(total);
