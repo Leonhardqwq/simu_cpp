@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <iostream>
-#include <utility>
 #include <vector>
 #include <thread>
 #include <atomic>
@@ -14,9 +13,9 @@
 void print_imp(){
     ImpCalculator cal(
         500,    
-        Scene::ROOF, 
-        -1, 
-        634.221f, 
+        Scene::DAY, 
+        0.0f, 
+        700.9f, 
         0, 
         CdState{0, 0}, 
         0
@@ -27,7 +26,7 @@ void print_imp(){
     printf("land:%d, eat:%d, x:%.10f\n", cal.res, cal.t_enter, cal.x_ans[cal.res]);
 
     for (size_t i = 0; i < cal.x_ans.size(); i++) 
-        printf("time:%.3d, x:%.1f y:%.1f h:%.10f\n", int(i), cal.x_ans[i], cal.y_ans[i], cal.dy_ans[i]);
+        printf("time:%.3d, x:%.10f y:%.10f h:%.10f\n", int(i), cal.x_ans[i], cal.y_ans[i], cal.dy_ans[i]);
 }
 
 void rnd_scan() {
@@ -178,8 +177,8 @@ void calc_extrem(Scene scene, int M = 500, bool parallel = false) {
 }
 
 int main() {
-    // print_imp();
-    calc_extrem(Scene::DAY, 209, true);
+    print_imp();
+    // calc_extrem(Scene::DAY, 209, true);
     // rnd_scan();
 
     return 0;
