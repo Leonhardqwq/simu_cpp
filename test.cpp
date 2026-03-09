@@ -219,16 +219,18 @@ void cal_digger_x_extrem(int M_sup, bool huge_wave, std::vector<int> ice_t,bool 
 }
 
 int main(){
+/*
     cal_digger_x_extrem(
         M, false, 
         {}, 
         true
     );
+//*/
     
-/*
+//*
     cal_x_extrem(
-        ZombieType::Digger, M, false, 
-        {}, {}, 
+        ZombieType::Gargantuar, M, false, 
+        {1}, {}, 
         PositionCalculator::TypeCal::FASTEST,
         true
     );
