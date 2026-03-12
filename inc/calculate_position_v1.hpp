@@ -248,6 +248,7 @@ public:
 
     // 过程变量
     float v0;
+    float v1;    
     std::vector<int> frozen_t[2];   // 0first / 1second
 
     // 结果
@@ -603,7 +604,7 @@ private:
             // status
             if (state.frozen_cd <= 0 && int(x[i-1]) <= 10) {
                 // 速度重置
-                v0 = rng.randfloat(z.speed.first, z.speed.second);
+                v0 = v1 == 0 ? rng.randfloat(z.speed.first, z.speed.second) : v1;
                 // v0 = static_cast<float>(z.speed.second);
                 reanim = Reanim(z, v0);
                 // position
@@ -714,7 +715,7 @@ private:
             // status
             if (state.frozen_cd <= 0 && int(x[i-1]) <= 25) {
                 // 速度重置
-                v0 = rng.randfloat(z.speed.first, z.speed.second);
+                v0 = v1 == 0 ? rng.randfloat(z.speed.first, z.speed.second) : v1;
                 // v0 = static_cast<float>(z.speed.first);
                 reanim = Reanim(z, v0);
                 // position
@@ -812,13 +813,14 @@ private:
 void cal_x(
     ZombieType type, int M_sup, bool huge_wave, std::vector<int> ice_t, std::vector<int> splash_t,
     PositionCalculator::TypeCal test_type_zombie, 
-    int x0=0, float v0=0.0f
+    int x0=0, float v0=0.0f, float v1=0.0f
 ){
     PositionCalculator cal(type, M_sup, huge_wave, ice_t, splash_t);
     cal.type_cal = test_type_zombie;
 
     cal.init();
     if (v0 != 0.0f) cal.v0 = v0;
+    if (v1 != 0.0f) cal.v1 = v1;
     if (x0 != 0)    cal.x[0] = static_cast<float>(x0);
         
     cal.calculate_position();
