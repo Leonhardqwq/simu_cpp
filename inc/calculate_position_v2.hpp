@@ -743,56 +743,45 @@ private:
     }
 
     void calculate_catapult_shoot() {
+        int status = 0; // 0: walking, 67: shoot
         Reanim reanim(24.0f, 32);
-
         CdState state;
         size_t i = 1;
-
-        // move
         for (; i < M; i++) {
             int t = static_cast<int>(i);
             // plant ice
             IceEffect::apply(t, ice_t, frozen_t, state);
             // cd
             state.tick();
-            // status ???
-            if (state.frozen_cd <= 0 && x[i-1] <= 650) {
-                // position
+            // status ??? 不考虑ice4
+            if (status == 0) { // walking
+                if (!state.is_frozen() && x[i-1] <= 650)
+                    status = 67; 
+            }
+            else if (status == 67) { // shoot
+                if (!state.is_frozen() && reanim.progress > 0.545f) {
+                    if (t_enter == -1) 
+                        t_enter = i;
+                    break;
+                }
+            }
+            // position
+            if (status == 0) { // walking
+                float dx = DxCalculator::get_dx_constant(v0, state);
+                walk_left(dx);
+            }
+            else if (status == 67) { // shoot
                 stay();
-                // progress
-                reanim.update(state);
-                // projectile splash
-                SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
-                i++; break;
             }
-            // position
-            float dx = DxCalculator::get_dx_constant(v0, state);
-            walk_left(dx);
-            // projectile splash
-            SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
-        }
-
-        // shoot
-        for (; i < M; i++) {
-            int t = static_cast<int>(i);
-            // plant ice
-            IceEffect::apply(t, ice_t, frozen_t, state);
-            // cd
-            state.tick();
-            // status
-            if (reanim.progress > 0.545f && state.frozen_cd <= 0) {
-                if (t_enter == -1) t_enter = i;
-                break;
-            }
-            // position
-            stay();
             // progress
-            reanim.update(state);
-            reanim.wrap();
+            if (status == 67) {
+                reanim.update(state);
+                reanim.wrap();
+            }
             // projectile splash
             SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
         }
-        // stay
+        // end
         for (; i < M; i++) stay();
     }
 };
