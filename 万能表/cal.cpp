@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 using namespace std;
-const int M = 20000;
+const int M = 11000;
 
 
 void cal(int ice_t = 0, PositionCalculator::TypeCal type_cal = PositionCalculator::TypeCal::FASTEST){
@@ -71,14 +71,8 @@ void cal(int ice_t = 0, PositionCalculator::TypeCal type_cal = PositionCalculato
     }
     
     write_2dvector_to_csv(x_table, "x_table.csv", true);
-
-    cout<<NAN;
-
-
 }
 int main(){
-    cal(1, PositionCalculator::TypeCal::SLOWEST);
-
-
+    cal(1, PositionCalculator::TypeCal::FASTEST);
     return 0;
 }
