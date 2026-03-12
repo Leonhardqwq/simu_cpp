@@ -591,9 +591,7 @@ private:
             }
 
             // enter
-            if (check_enter(x[i-1], t)) {
-                // i++; break;
-            }
+            if (check_enter(x[i-1], t)) {i++; break;}
             // progress
             if (status == 51) { // walk_with_dolphin
                 reanim.update(state);
@@ -610,114 +608,80 @@ private:
     }
 
     void calculate_snorkel() {
+        int status = 57; // 57: walking, 58: jump in pool, 59: swim
         Reanim reanim(z, v0);
         reanim.init_progress();
 
         CdState state;
         size_t i = 1;
-
-        // walking
         for (; i < M; i++) {
             int t = static_cast<int>(i);
+            float x_old = x[i-1];
             // plant ice
-            IceEffect::apply(t, ice_t, frozen_t, state);
+            if (status == 57) // walking
+                IceEffect::apply(t, ice_t, frozen_t, state);
+            else if (status == 58) // jump in pool
+                IceEffect::apply_slow_only(t, ice_t, state);
+            else if (status == 59) // swim
+                IceEffect::apply_pool(t, ice_t, state);
             // cd
             state.tick();
             // status
-            if (int(x[i-1]) <= 720 && state.frozen_cd <= 0) {
-                v0 = 0.2f; 
-                reanim = Reanim(16.0f, 19);
-                // position
-                walk_left(v0);
-                // progress
-                reanim.init_progress();
-                // projectile splash
-                SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
-                i++; break;
+            if (!state.is_frozen()) switch (status) {
+                case 57: {// walking
+                    int x_int = int(x[i-1]);
+                    if (700 < x_int && x_int <= 720) {
+                        status = 58; 
+                        v0 = 0.2f;
+                        reanim = Reanim(16.0f, 19);
+                    }
+                    break;
+                }
+                case 58: // jump in pool
+                    if (reanim.progress >= 1) {
+                        status = 59;
+                        if (res == -1) res = i;
+                    }
+                    break;
+                case 59: // swim
+                    if (int(x[i-1]) <= 25) {
+                        status = 57;
+                        // 速度重置
+                        v0 = v1 == 0 ? rng.randfloat(z.speed.first, z.speed.second) : v1;
+                        // v0 = static_cast<float>(z.speed.first);
+                        reanim = Reanim(z, v0);
+                        x_old -= 15.0f;
+                    }
+                    break;
             }
             // position
-            float dx = DxCalculator::get_dx_from_ground(z, reanim, state);
-            walk_left(dx);
-            // progress
-            reanim.update(state);
-            reanim.wrap();
-            // projectile splash
-            SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
-        }
-
-        // jump in pool ???
-        for (; i < M; i++) {
-            int t = static_cast<int>(i);
-            // plant ice
-            IceEffect::apply_slow_only(t, ice_t, state);
-            // cd
-            state.tick();
-            // status
-            if (reanim.progress >= 1 && state.frozen_cd <= 0) {
-                // status
-                if (res == -1) res = i;
+            if (status == 57) { // walking
+                float dx = DxCalculator::get_dx_from_ground(z, reanim, state);
+                x.push_back(x_old - dx);
+            }
+            else if (status == 58) // jump in pool
+                walk_left(v0);
+            else if (status == 59) { // swim
                 float dx = DxCalculator::get_dx_constant(v0, state);
                 walk_left(dx);
-                // projectile splash
-                SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
-                i++; break;
             }
-            // position
-            walk_left(v0);
-            // progress
-            reanim.update_unconditional();
-            // projectile splash
-            SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
-        }
 
-        // swim
-        for (; i < M; i++) {
-            int t = static_cast<int>(i);
-            // plant ice
-            IceEffect::apply_pool(t, ice_t, state);
-            // cd
-            state.tick();
-            // status
-            if (state.frozen_cd <= 0 && int(x[i-1]) <= 25) {
-                // 速度重置
-                v0 = v1 == 0 ? rng.randfloat(z.speed.first, z.speed.second) : v1;
-                // v0 = static_cast<float>(z.speed.first);
-                reanim = Reanim(z, v0);
-                // position
-                float dx = DxCalculator::get_dx_from_ground(z, reanim, state);
-                x.push_back(x[i-1] - 15.0f - dx);
-                // progress
+            // enter
+            if (check_enter(x[i-1], t)) {i++; break;}
+
+            // progress
+            if (status == 57) { // walking
                 reanim.update(state);
                 reanim.wrap();
-                // projectile splash
-                SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
-                i++; break;
             }
-            // position
-            float dx = DxCalculator::get_dx_constant(v0, state);
-            walk_left(dx);
-            // projectile splash
-            SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
-        }
+            else if (status == 58) // jump in pool
+                reanim.update_unconditional();
 
-        // walking
-        for (; i < M; i++) {
-            int t = static_cast<int>(i);
-            // plant ice
-            IceEffect::apply(t, ice_t, frozen_t, state);
-            // cd
-            state.tick();
-            // position
-            float dx = DxCalculator::get_dx_from_ground(z, reanim, state);
-            walk_left(dx);
-            // enter
-            check_enter(x[i-1], t);
-            // progress
-            reanim.update(state);
-            reanim.wrap();
             // projectile splash
             SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
         }
+        // end
+        for (; i < M; i++) stay();
     }
 
     void calculate_catapult_shoot() {
