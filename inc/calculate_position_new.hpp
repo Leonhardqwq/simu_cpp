@@ -826,18 +826,17 @@ void cal_x(
     printf("%d %d\n", cal.t_enter,cal.res);
 }
 
-void cal_x_extrem(
+std::vector<float> cal_x_extrem(
     ZombieType type, int M_sup, bool huge_wave, std::vector<int> ice_t, std::vector<int> splash_t,
-    PositionCalculator::TypeCal test_type_zombie=PositionCalculator::TypeCal::FASTEST, bool parallel = false
+    PositionCalculator::TypeCal test_type_zombie=PositionCalculator::TypeCal::FASTEST, bool parallel = false, bool output = true
 ){
     PositionCalculator cal(type, M_sup, huge_wave, ice_t, splash_t);
     cal.type_cal = test_type_zombie;
-    
+    std::vector<float> x;
     auto v_range = cal.z.speed;
     auto v_ull_start = bit_cast<uint32_t>(static_cast<float>(v_range.first));
     auto v_ull_end = bit_cast<uint32_t>(static_cast<float>(v_range.second));
     if (!parallel){
-        std::vector<float> x;
         if (cal.type_cal == PositionCalculator::TypeCal::FASTEST)
             x.resize(M_sup, 1000.0f);
         else
@@ -856,7 +855,8 @@ void cal_x_extrem(
                 printf("%u %u %u\n", v_ull_start, i, v_ull_end);
             }
         }
-        write_vector_to_csv(x, "output.csv");
+        if (output)
+            write_vector_to_csv(x, "output.csv");
     }
     else{
         uint32_t total = v_ull_end - v_ull_start + 1;
@@ -908,7 +908,6 @@ void cal_x_extrem(
         for (auto& th : threads) th.join();
 
         // 合并结果
-        std::vector<float> x;
         if (cal.type_cal == PositionCalculator::TypeCal::FASTEST)
             x.resize(M_sup, 1000.0f);
         else
@@ -922,6 +921,8 @@ void cal_x_extrem(
                 }
             }
         }
-        write_vector_to_csv(x, "output.csv",true);
+        if (output)
+            write_vector_to_csv(x, "output.csv",true);
     }
+    return x;
 }
