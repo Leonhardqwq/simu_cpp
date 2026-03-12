@@ -332,9 +332,12 @@ public:
     
 private:
     // 辅助方法：检查并设置进入时机
-    void check_enter(float x_val, int time) {
-        if (int(x_val) <= z.threshold && t_enter == -1) 
+    bool check_enter(float x_val, int time) {
+        if (int(x_val) <= z.threshold && t_enter == -1) {
             t_enter = time;
+            return true;
+        }
+        return false;
     }
 
     // 辅助方法：向左移动
@@ -348,7 +351,8 @@ private:
 
     void calculate_zomboni() {
         float v;
-        for(size_t i=1;i<M;i++){
+        size_t i = 1;
+        for(; i < M; i++){
             float x_old = x[i-1];
             double dx = std::floor(x_old - 700)/400;
 
@@ -363,8 +367,10 @@ private:
             
             float x_new = x_old - v;
             x.push_back(x_new);
-            if (x_old <= z.threshold && t_enter == -1)   t_enter = i;
+            if (check_enter(x_old, i)) {i++; break;}
         }
+        // end
+        for (; i < M; i++) stay();
     }
 
     void calculate_animation() {
@@ -373,8 +379,8 @@ private:
         reanim.init_progress();
 
         CdState state;
-        
-        for (size_t i = 1; i < M; i++) {
+        size_t i = 1;
+        for (; i < M; i++) {
             int t = static_cast<int>(i);
             
             // plant ice
@@ -395,7 +401,7 @@ private:
             walk_left(dx);
 
             // enter
-            check_enter(x[i-1], t);
+            if (check_enter(x[i-1], t)) {i++; break;}
 
             // progress
             reanim.update(state);
@@ -404,12 +410,14 @@ private:
             // projectile splash
             SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
         }
+        // end
+        for (; i < M; i++) stay();
     }
 
     void calculate_constant() {
         CdState state;
-        
-        for (size_t i = 1; i < M; i++) {
+        size_t i = 1;
+        for (; i < M; i++) {
             int t = static_cast<int>(i);
             
             // plant ice
@@ -423,11 +431,13 @@ private:
             walk_left(dx);
 
             // enter
-            check_enter(x[i-1], t);
+            if (check_enter(x[i-1], t)) {i++; break;}
 
             // projectile splash
             SplashEffect::apply_with_type_check(t, splash_t, x[i], z.def_x.first, state, z.type);
         }
+        // end
+        for (; i < M; i++) stay();
     }
 
     void calculate_digger() {
