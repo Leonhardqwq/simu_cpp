@@ -226,10 +226,9 @@ public:
 // ==================== 位置计算器 ====================
 
 class PositionCalculator {
-private:
+public:
     rng rng;
 
-public:
     // 自动入参
     int M;
     ZombieData z;
@@ -243,8 +242,10 @@ public:
         FASTEST,
         SLOWEST,
     } type_cal;
-    int action_cd;  // jack 类外更新
-    int x_target = 40 + 20;   // digger 类外更新, 代表啃食植物防御左限, 默认1列南瓜
+    int action_cd;  // jack, dancing 类外更新
+    int x_target = 40 + 20;   
+    // digger 类外更新, 代表啃食植物防御左限, 默认1列南瓜
+    // dancing 类外更新, 代表触碰植物防御右限，8列炮为 600 + 40
 
     // 过程变量
     float v0;
@@ -254,7 +255,7 @@ public:
     // 结果
     std::vector<float> x;
     int t_enter = -1; 
-    int res = -1;    // jack爆炸时机, snorkel潜入时机, 矿工站稳时机
+    int res = -1;    // jack爆炸时机, snorkel潜入时机, 矿工站稳时机, 舞王召唤时机
 
     PositionCalculator(
         ZombieType t, int M, bool huge_wave,
@@ -263,7 +264,7 @@ public:
 
     // x0, v0, frozen time
     void init(){
-        t_enter = -1;res = -1;
+        t_enter = -1; res = -1; action_cd = 0;
         x.clear();        
         float x0;
         switch (type_cal) {
@@ -325,6 +326,9 @@ public:
         }
         else if(z.type == ZombieType::Catapult_Shoot){
             calculate_catapult_shoot();
+        }
+        else if (z.type == ZombieType::Dancing){
+            calculate_dancing();
         }
         else{
             calculate_animation();
@@ -726,25 +730,98 @@ private:
         // end
         for (; i < M; i++) stay();
     }
+
+    void calculate_dancing() {
+        int status = 40; // 40: moonwalk, 29: point, 43: summoning, 44: walking
+        action_cd += 300; // randint(12)
+        int n_repeated = 0;
+        Reanim reanim(24.0f, z.n_frames);
+        reanim.init_progress();
+        CdState state;
+        size_t i = 1;
+        for (; i < M; i++) {
+            int t = static_cast<int>(i);
+            // plant ice
+            IceEffect::apply(t, ice_t, frozen_t, state);
+            if (status == 40) {
+                if (state.is_frozen() && reanim.fps != 0.0f) 
+                    reanim.fps = 0.0f;
+            }
+            // cd
+            if (action_cd > 0 && !state.is_frozen()) action_cd--;
+            state.tick();
+            // status
+            if (!state.is_frozen()) switch (status) {
+                case 40: // moonwalk
+                    if (action_cd == 0) {
+                        status = 29;
+                        reanim = Reanim(24.0f, 10);
+                        n_repeated = 0;
+                    }
+                    break;
+                case 29: // point
+                    if (n_repeated > 0) {
+                        status = 43;
+                        action_cd = 200;
+                        if (res == -1) res = i;
+                    }
+                    break;
+                case 43: // summoning
+                    if (action_cd == 0) {
+                        status = 44;
+                    }
+                    break;
+            }
+            // position
+            switch (status) {
+            case 40: {// moonwalk
+                float dx = DxCalculator::get_dx_from_ground(z, reanim, state);
+                walk_right(dx);
+                break;
+            }
+            case 29: // point
+            case 43: // summoning
+            case 44:  // walking
+                stay();
+                break;
+            }
+            // eat
+            if (!state.is_frozen()) switch (status) {
+            case 40: // moonwalk
+                if (int(x[i-1]) + z.atk.first <= x_target) {
+                    int op = state.get_eat_interval();
+                    if (i % op == 0) {
+                        action_cd = 1;
+                    }
+                }
+                break;
+            case 44: // walking
+                // if (t_enter==-1 && int(x[i-1]) + z.atk.first <= x_target) {
+                if (t_enter==-1) { // 暂时不考虑啃食判定问题
+                    int op = state.get_eat_interval();
+                    if (i % op == 0) 
+                        t_enter = i;
+                }
+                break;
+            }
+            // progress
+            switch (status) {
+            case 40: // moonwalk
+                reanim.update(state);
+                reanim.wrap();
+                break;
+            case 29: // point
+                reanim.update(state);
+                n_repeated += reanim.wrap_with_count();
+                break;
+            }
+            // projectile splash
+            SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
+        }
+        // end
+        for (; i < M; i++) stay();
+    }
 };
-
-void cal_x(
-    ZombieType type, int M_sup, bool huge_wave, std::vector<int> ice_t, std::vector<int> splash_t,
-    PositionCalculator::TypeCal test_type_zombie, 
-    int x0=0, float v0=0.0f, float v1=0.0f
-){
-    PositionCalculator cal(type, M_sup, huge_wave, ice_t, splash_t);
-    cal.type_cal = test_type_zombie;
-
-    cal.init();
-    if (v0 != 0.0f) cal.v0 = v0;
-    if (v1 != 0.0f) cal.v1 = v1;
-    if (x0 != 0)    cal.x[0] = static_cast<float>(x0);
-        
-    cal.calculate_position();
-    write_vector_to_csv(cal.x, "output.csv",true);
-    printf("%d %d\n", cal.t_enter,cal.res);
-}
 
 std::vector<float> cal_x_extrem(
     ZombieType type, int M_sup, bool huge_wave, std::vector<int> ice_t, std::vector<int> splash_t,

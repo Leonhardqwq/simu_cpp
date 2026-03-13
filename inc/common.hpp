@@ -20,6 +20,10 @@ enum class ZombieType {
     Gargantuar,
     GigaGargantuar,
     Catapult_Shoot,
+    Dancing,
+    Zombie1, // walk1 
+    Zombie2, // walk2
+    Flag, // walk2
     Unknown
 };
 
@@ -58,11 +62,13 @@ public:
             case ZombieType::Catapult:      spawn_l = 825;break;
             case ZombieType::Gargantuar:
             case ZombieType::GigaGargantuar:spawn_l = 845;break;
+            case ZombieType::Flag:          spawn_l = 800;break;
             default:                        spawn_l = 780;
         }
 
         // spawn_offset, spawn_hugewave_offset
         switch (type) {
+            case ZombieType::Flag:          spawn_offset = 0;spawn_hugewave_offset = 0; break;
             case ZombieType::PoleVaulting:  
             case ZombieType::Zomboni:       
             case ZombieType::Catapult:
@@ -74,20 +80,25 @@ public:
 
         // speed
         switch (type) {
-            case ZombieType::Pogo:          speed = {double(0.45f), double(0.45f)}; break;
+            case ZombieType::Pogo:          
+            case ZombieType::Flag:          speed = {double(0.45f), double(0.45f)}; break;
             case ZombieType::Newspaper:     
             case ZombieType::ScreenDoor:    
             case ZombieType::Balloon:       
             case ZombieType::Catapult: 
             case ZombieType::Catapult_Shoot:
             case ZombieType::Gargantuar:
-            case ZombieType::GigaGargantuar:speed = {double(0.23f), double(0.37f)}; break;
+            case ZombieType::GigaGargantuar:
+            case ZombieType::Zombie1:
+            case ZombieType::Zombie2:       speed = {double(0.23f), double(0.37f)}; break;
 
             case ZombieType::Zomboni:       speed = {double(0.0f), double(0.0f)}; break;
 
             case ZombieType::DolphinRider:  speed = {double(0.89f), double(0.91f)}; break;
 
             case ZombieType::Ladder:        speed = {double(0.79f), double(0.81f)}; break;
+
+            case ZombieType::Dancing:       speed = {double(0.5f), double(0.5f)}; break;
 
             default:                        speed = {double(0.66f), double(0.68f)}; 
         }
@@ -115,7 +126,8 @@ public:
             case ZombieType::DolphinRider:  atk = {-29, 41}; break;
 
             case ZombieType::Football:      
-            case ZombieType::Digger:        atk = {50, 70}; break;
+            case ZombieType::Digger:        
+            case ZombieType::Dancing:       atk = {50, 70}; break;
 
             case ZombieType::Zomboni:   
             case ZombieType::Catapult_Shoot:
@@ -132,7 +144,8 @@ public:
             case ZombieType::DolphinRider:      
             case ZombieType::JackInTheBox:      
             case ZombieType::Ladder:            
-            case ZombieType::Pogo:              hp = 335; break;    // 335 / 500
+            case ZombieType::Pogo:
+            case ZombieType::Dancing:           hp = 335; break;    // 335 / 500
 
             case ZombieType::Balloon:           hp = 290; break;
             case ZombieType::Digger:            hp = 281; break;
@@ -144,6 +157,8 @@ public:
             case ZombieType::GigaGargantuar:    hp = 6000; break;
 
             default:                            hp = 181; break;    // 181 / 270
+            // 路障 181 + 370
+            // 铁桶 181 + 1100
         }
 
         // threshold
@@ -162,6 +177,7 @@ public:
                 break;
 
             case ZombieType::Snorkel:
+            case ZombieType::Dancing:
                 threshold = -130;
                 break;
 
@@ -282,6 +298,54 @@ public:
                     42.5f, 42.5f, 42.9f, 43.3f, 43.5f, 43.9f, 44.3f,        
                 };
                 begin_frame = 22;
+                set_anim();break;
+            case ZombieType::Dancing:
+                _ground = {
+                    -9.8f,
+                    -9.8f, -9.8f, -13.3f, -16.7f, -20.1f, -22.2f, -24.4f,
+                    -26.5f, -27.9f, -29.3f, -30.8f, -37.5f, -44.3f, -51.1f,
+                    -51.1f, -51.1f, -53.8f, -56.9f, -59.9f, -62.9f, -66.1f,
+                    -69.3f, -72.4f, -78.2f, -84.0f, -89.8f,
+                };
+                begin_frame = 0;
+                set_anim();break;
+            case ZombieType::Zombie1:
+                _ground = {
+                        -9.8f, -8.4f, -7.0f, -5.6f, -4.1f, -2.7f,
+                    -1.3f, 0.0f, 1.4f, 2.8f, 4.2f, 5.7f, 7.1f,
+                    7.9f, 8.8f, 9.7f, 10.5f, 10.6f, 10.8f, 10.9f,
+                    11.0f, 11.0f, 11.0f, 11.0f, 11.0f, 13.4f, 15.8f,
+                    18.1f, 20.5f, 22.8f, 25.2f, 27.6f, 29.9f, 31.1f,
+                    32.3f, 33.5f, 34.6f, 35.9f, 37.0f, 38.2f, 39.4f,
+                    39.5f, 39.6f, 39.7f, 39.8f, 39.9f, 40.0f,
+                };
+                begin_frame = 44;
+                set_anim();break;
+            case ZombieType::Zombie2:
+                _ground = {
+                                                -9.8f,
+                    -8.5f, -7.3f, -6.0f, -4.7f, -3.4f, -2.1f, -0.9f,
+                    0.3f, 1.6f, 2.8f, 4.1f, 5.4f, 6.7f, 8.0f,
+                    9.2f, 10.5f, 10.6f, 10.7f, 10.7f, 10.8f, 10.8f,
+                    10.9f, 11.0f, 12.8f, 14.5f, 16.3f, 18.1f, 19.9f,
+                    21.6f, 23.4f, 25.2f, 27.0f, 28.8f, 30.5f, 32.3f,
+                    34.0f, 35.9f, 37.6f, 39.4f, 39.5f, 39.5f, 39.6f,
+                    39.8f, 39.9f, 39.9f, 40.0f
+                };
+                begin_frame = 91;
+                set_anim();break;
+            case ZombieType::Flag:
+                _ground = {
+                                                -9.8f,
+                    -8.5f, -7.3f, -6.0f, -4.7f, -3.4f, -2.1f, -0.9f,
+                    0.3f, 1.6f, 2.8f, 4.1f, 5.4f, 6.7f, 8.0f,
+                    9.2f, 10.5f, 10.6f, 10.7f, 10.7f, 10.8f, 10.8f,
+                    10.9f, 11.0f, 12.8f, 14.5f, 16.3f, 18.1f, 19.9f,
+                    21.6f, 23.4f, 25.2f, 27.0f, 28.8f, 30.5f, 32.3f,
+                    34.0f, 35.9f, 37.6f, 39.4f, 39.5f, 39.5f, 39.6f,
+                    39.8f, 39.9f, 39.9f, 40.0f
+                };
+                begin_frame = 91;
                 set_anim();break;
             default:
                 _ground = {};

@@ -10,14 +10,15 @@ using namespace std;
 const int M = 500;
 
 int main(){
-    Reanim reanim(16, 33);
+    Reanim reanim(24, 10);
+    // Reanim reanim(ZombieData(ZombieType::Dancing), 0.5f);
     CdState state;
     int n_repeated = 0;
     vector<float> thresholds = {
         0.64f
     };
 
-    // state.slow_cd = 1000000;
+    state.slow_cd = 1000000;
     for(int i = 1; i <= M; i++){
         reanim.update(state);
         n_repeated += reanim.wrap_with_count();
@@ -35,3 +36,4 @@ int main(){
 // 24, 6 小鬼落地
 // 16, 33 巨人砸 0.64f
 // 24, 34 巨人投 0.74f
+// 24, 10 舞王

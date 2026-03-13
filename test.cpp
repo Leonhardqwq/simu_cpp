@@ -1,11 +1,32 @@
 #include <cstdint>
-
-# include "inc/calculate_position_v1.hpp"
+# include "inc/calculate_position_v2.hpp"
 # include "inc/calculate_hit_time.hpp"
 #include <atomic>
 # include "inc/util.hpp"
 using namespace std;
-const int M = 20000;
+const int M = 200;
+
+
+void cal_x(
+    ZombieType type, int M_sup, bool huge_wave, std::vector<int> ice_t, std::vector<int> splash_t,
+    PositionCalculator::TypeCal test_type_zombie, 
+    int x0=0, float v0=0.0f, float v1=0.0f
+){
+    PositionCalculator cal(type, M_sup, huge_wave, ice_t, splash_t);
+    cal.type_cal = test_type_zombie;
+
+    cal.init();
+    if (v0 != 0.0f) cal.v0 = v0;
+    if (v1 != 0.0f) cal.v1 = v1;
+    if (x0 != 0)    cal.x[0] = static_cast<float>(x0);
+    cal.action_cd = cal.rng.randint(12);
+    cal.action_cd = 0;
+        
+    cal.calculate_position();
+    write_vector_to_csv(cal.x, "output.csv",true);
+    printf("%d %d\n", cal.t_enter,cal.res);
+}
+
 
 void test_hit_time(){
     HitTimeCalculator cal(PlantType::Gloomshroom, M);
@@ -113,16 +134,30 @@ void test_T(){
     std::cout<<- cal.x[T] + cal.x[0];
 }
 
-void test_tmp(){
-    Reanim reanim(ZombieData(ZombieType::Digger), 0.12f);
-    for (int i = 0; i < 100; ++i) {
-        reanim.update_unconditional();
-        reanim.wrap();
-        std::cout << "i=" << i << " Progress: " << reanim.progress * 36 << std::endl;
+void test_tmp(PositionCalculator::TypeCal type_cal){
+    auto x1 = cal_x_extrem(
+        ZombieType::Zombie1, M, false, 
+        {}, {}, 
+        type_cal,
+        true, false
+    );
+    auto x2 = cal_x_extrem(
+        ZombieType::Zombie2, M, false, 
+        {}, {}, 
+        type_cal,
+        true, false
+    );
+    vector<float> x;
+    for (size_t i = 0; i < x1.size(); ++i) {
+        if (type_cal == PositionCalculator::TypeCal::FASTEST)
+            x.push_back(min(x1[i], x2[i]));
+        else
+            x.push_back(max(x1[i], x2[i]));
     }
+    write_vector_to_csv(x, "output.csv",true);
 }
 
-void cal_digger_x_extrem(int M_sup, bool huge_wave, std::vector<int> ice_t,bool parallel = false) {
+void cal_digger_x_extrem(int M_sup, bool huge_wave, std::vector<int> ice_t, bool parallel = false) {
     PositionCalculator cal(ZombieType::Digger, M_sup, huge_wave, ice_t, {});
     cal.type_cal = PositionCalculator::TypeCal::FASTEST;
 
@@ -227,21 +262,22 @@ int main(){
     );
 //*/
     
-//*
+///*
     cal_x_extrem(
-        ZombieType::Gargantuar, M, false, 
-        {1}, {}, 
+        ZombieType::Flag, M, false, 
+        {}, {}, 
         PositionCalculator::TypeCal::FASTEST,
         true
     );
 //*/
 /*
     cal_x(
-        ZombieType::Digger, M, false, 
+        ZombieType::Zombie1, M, false, 
         {}, {}, 
-        PositionCalculator::TypeCal::SLOWEST
-        , 780
-        , 0.68f
+        PositionCalculator::TypeCal::FASTEST
+        // , 780+31
+        // , 0.89001f
+        // , 0.90773f
     );
 //*/
 
@@ -249,7 +285,7 @@ int main(){
     // test_smash_rate_mt();
     // test_T();
 
-    // test_tmp();
+    // test_tmp(PositionCalculator::TypeCal::FASTEST);
 
     return 0;
 }
