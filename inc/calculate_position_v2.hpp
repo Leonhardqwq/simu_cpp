@@ -933,10 +933,12 @@ private:
 std::vector<float> cal_x_extrem(
     ZombieType type, int M_sup, bool huge_wave, std::vector<int> ice_t, std::vector<int> splash_t,
     PositionCalculator::TypeCal test_type_zombie=PositionCalculator::TypeCal::FASTEST, bool parallel = false, bool output = true,
-    float v0 = 0.0f, float v1 = 0.0f
+    float v0 = 0.0f, float v1 = 0.0f, 
+    PositionCalculator::Dancecheat dc_type = PositionCalculator::Dancecheat::NONE
 ){
     PositionCalculator cal(type, M_sup, huge_wave, ice_t, splash_t);
     cal.type_cal = test_type_zombie;
+    cal.dc_type = dc_type;
     std::vector<float> x;
     auto v_range = cal.z.speed;
     auto v_ull_start = bit_cast<uint32_t>(static_cast<float>(v_range.first));

@@ -1,4 +1,5 @@
 # include "../inc/calculate_position_v2.hpp"
+#include <cstdint>
 #include <map>
 #include <string>
 #include <utility>
@@ -11,31 +12,32 @@ void cal(int ice_t = 0, PositionCalculator::TypeCal type_cal = PositionCalculato
         string name;
         ZombieType zombie_type;
         bool huge_wave;
+        PositionCalculator::Dancecheat dc_type;
     };
 
     vector<ConfigItem> configs = {
-        {"普僵", ZombieType::Zombie1, false},
-        {"普僵dc快", ZombieType::Unknown, false},
-        {"普僵dc慢", ZombieType::Unknown, false},
-        {"旗帜", ZombieType::Flag, false},
-        {"撑杆", ZombieType::PoleVaulting, false},
-        {"读报", ZombieType::Newspaper, false},
-        {"铁门", ZombieType::ScreenDoor, false},
-        {"橄榄", ZombieType::Football, false},
-        {"舞王", ZombieType::Dancing, false},
-        {"潜水", ZombieType::Snorkel, false},
-        {"旗帜波潜水", ZombieType::Snorkel, true},
-        {"冰车", ZombieType::Unknown, false},
-        {"海豚", ZombieType::DolphinRider, false},
-        {"旗帜波海豚", ZombieType::DolphinRider, true},
-        {"小丑", ZombieType::JackInTheBox, false},
-        {"气球", ZombieType::Balloon, false},
-        {"矿工", ZombieType::Unknown, false},
-        {"旗帜波矿工", ZombieType::Unknown, true},
-        {"跳跳", ZombieType::Pogo, false},
-        {"扶梯", ZombieType::Ladder, false},
-        {"投篮", ZombieType::Catapult, false},
-        {"巨人", ZombieType::Gargantuar, false},
+        {"普僵", ZombieType::Zombie1, false, PositionCalculator::Dancecheat::NONE},
+        {"普僵dc快", ZombieType::Zombie1, false, PositionCalculator::Dancecheat::FAST},
+        {"普僵dc慢", ZombieType::Zombie1, false, PositionCalculator::Dancecheat::SLOW},
+        {"旗帜", ZombieType::Flag, false, PositionCalculator::Dancecheat::NONE},
+        {"撑杆", ZombieType::PoleVaulting, false, PositionCalculator::Dancecheat::NONE},
+        {"读报", ZombieType::Newspaper, false, PositionCalculator::Dancecheat::NONE},
+        {"铁门", ZombieType::ScreenDoor, false, PositionCalculator::Dancecheat::NONE},
+        {"橄榄", ZombieType::Football, false, PositionCalculator::Dancecheat::NONE},
+        {"舞王", ZombieType::Dancing, false, PositionCalculator::Dancecheat::NONE},
+        {"潜水", ZombieType::Snorkel, false, PositionCalculator::Dancecheat::NONE},
+        {"旗帜波潜水", ZombieType::Snorkel, true, PositionCalculator::Dancecheat::NONE},
+        {"冰车", ZombieType::Unknown, false, PositionCalculator::Dancecheat::NONE},
+        {"海豚", ZombieType::DolphinRider, false, PositionCalculator::Dancecheat::NONE},
+        {"旗帜波海豚", ZombieType::DolphinRider, true, PositionCalculator::Dancecheat::NONE},
+        {"小丑", ZombieType::JackInTheBox, false, PositionCalculator::Dancecheat::NONE},
+        {"气球", ZombieType::Balloon, false, PositionCalculator::Dancecheat::NONE},
+        {"矿工", ZombieType::Unknown, false, PositionCalculator::Dancecheat::NONE},
+        {"旗帜波矿工", ZombieType::Unknown, true, PositionCalculator::Dancecheat::NONE},
+        {"跳跳", ZombieType::Pogo, false, PositionCalculator::Dancecheat::NONE},
+        {"扶梯", ZombieType::Ladder, false, PositionCalculator::Dancecheat::NONE},
+        {"投篮", ZombieType::Catapult, false, PositionCalculator::Dancecheat::NONE},
+        {"巨人", ZombieType::Gargantuar, false, PositionCalculator::Dancecheat::NONE},
     };
     
     vector<vector<float>> x_table;
@@ -44,20 +46,23 @@ void cal(int ice_t = 0, PositionCalculator::TypeCal type_cal = PositionCalculato
         const string& name = item.name;
         ZombieType zombie_type = item.zombie_type;
         bool huge_wave = item.huge_wave;
+        PositionCalculator::Dancecheat dc_type = item.dc_type;
         printf("%s %s\n", name.c_str(), output_file.c_str());
 
         vector<float> x;
-        if (zombie_type == ZombieType::Unknown) {
+        if (zombie_type == ZombieType::Unknown) 
             x.resize(M, NAN);
-        }
-        else if (zombie_type == ZombieType::Zombie1 || zombie_type == ZombieType::ScreenDoor) {
-            auto x1 = cal_x_extrem(
+        else if (zombie_type == ZombieType::Zombie1 || zombie_type == ZombieType::Zombie2 || zombie_type == ZombieType::ScreenDoor) {
+            vector<float> x1, x2;
+            x1 = cal_x_extrem(
                 ZombieType::Zombie1, M, huge_wave, {ice_t}, {}, 
-                type_cal, true, false
+                type_cal, true, false,
+                dc_type
             );
-            auto x2 = cal_x_extrem(
+            x2 = cal_x_extrem(
                 ZombieType::Zombie2, M, huge_wave, {ice_t}, {}, 
-                type_cal, true, false
+                type_cal, true, false,
+                dc_type
             );
             for (size_t i = 0; i < x1.size(); ++i) {
                 if (type_cal == PositionCalculator::TypeCal::FASTEST)
@@ -99,8 +104,8 @@ void cal(int ice_t = 0, PositionCalculator::TypeCal type_cal = PositionCalculato
 }
 int main(){
     for (int ice_t : {
-        0, 1,
-        11, 12, 96
+        0, 
+        // 1, 11, 12, 96
     }) {
         cal(ice_t, PositionCalculator::TypeCal::FASTEST, "data/" + to_string(ice_t) + "_fast.csv");
         cal(ice_t, PositionCalculator::TypeCal::SLOWEST, "data/" + to_string(ice_t) + "_slow.csv");
