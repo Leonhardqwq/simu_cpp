@@ -6,7 +6,7 @@
 enum class ZombieType {
     PoleVaulting,
     Newspaper,
-    ScreenDoor, // walk2
+    ScreenDoor, // walk2 but walk1 & walk2
     Football,
     Snorkel,
     Zomboni,
@@ -23,7 +23,10 @@ enum class ZombieType {
     Dancing,
     Zombie1, // walk1 
     Zombie2, // walk2
-    Flag, // walk2
+    Flag,   // walk2
+    DuckyTube1,
+    DuckyTube2,
+    ZombieDance, // dance
     Unknown
 };
 
@@ -90,7 +93,10 @@ public:
             case ZombieType::Gargantuar:
             case ZombieType::GigaGargantuar:
             case ZombieType::Zombie1:
-            case ZombieType::Zombie2:       speed = {double(0.23f), double(0.37f)}; break;
+            case ZombieType::Zombie2:             
+            case ZombieType::DuckyTube1:     
+            case ZombieType::DuckyTube2:   
+            case ZombieType::ZombieDance:   speed = {double(0.23f), double(0.37f)}; break;
 
             case ZombieType::Zomboni:       speed = {double(0.0f), double(0.0f)}; break;
 
@@ -210,18 +216,6 @@ public:
                     -2.0f,
                 };
                 set_anim();break;
-            case ZombieType::ScreenDoor:
-                _ground = {          
-                                                            -9.8f,
-                    -8.5f, -7.3f, -6.0f, -4.7f, -3.4f, -2.1f, -0.9f,
-                    0.3f, 1.6f, 2.8f, 4.1f, 5.4f, 6.7f, 8.0f,
-                    9.2f, 10.5f, 10.6f, 10.7f, 10.7f, 10.8f, 10.8f,
-                    10.9f, 11.0f, 12.8f, 14.5f, 16.3f, 18.1f, 19.9f,
-                    21.6f, 23.4f, 25.2f, 27.0f, 28.8f, 30.5f, 32.3f,
-                    34.0f, 35.9f, 37.6f, 39.4f, 39.5f, 39.5f, 39.6f,
-                    39.8f, 39.9f, 39.9f, 40.0f,       
-                };
-                set_anim();break;
             case ZombieType::Football:
                 _ground = {       
                                                                     -59.8f,
@@ -310,6 +304,7 @@ public:
                 begin_frame = 0;
                 set_anim();break;
             case ZombieType::Zombie1:
+                // walk1
                 _ground = {
                         -9.8f, -8.4f, -7.0f, -5.6f, -4.1f, -2.7f,
                     -1.3f, 0.0f, 1.4f, 2.8f, 4.2f, 5.7f, 7.1f,
@@ -321,7 +316,10 @@ public:
                 };
                 begin_frame = 44;
                 set_anim();break;
+            case ZombieType::ScreenDoor:
             case ZombieType::Zombie2:
+            case ZombieType::Flag:
+                // walk2
                 _ground = {
                                                 -9.8f,
                     -8.5f, -7.3f, -6.0f, -4.7f, -3.4f, -2.1f, -0.9f,
@@ -334,18 +332,33 @@ public:
                 };
                 begin_frame = 91;
                 set_anim();break;
-            case ZombieType::Flag:
+            case ZombieType::DuckyTube1:
+            case ZombieType::DuckyTube2:
+                // swim
                 _ground = {
-                                                -9.8f,
-                    -8.5f, -7.3f, -6.0f, -4.7f, -3.4f, -2.1f, -0.9f,
-                    0.3f, 1.6f, 2.8f, 4.1f, 5.4f, 6.7f, 8.0f,
-                    9.2f, 10.5f, 10.6f, 10.7f, 10.7f, 10.8f, 10.8f,
-                    10.9f, 11.0f, 12.8f, 14.5f, 16.3f, 18.1f, 19.9f,
-                    21.6f, 23.4f, 25.2f, 27.0f, 28.8f, 30.5f, 32.3f,
-                    34.0f, 35.9f, 37.6f, 39.4f, 39.5f, 39.5f, 39.6f,
-                    39.8f, 39.9f, 39.9f, 40.0f
+                                -9.8f, -8.4f, -7.0f,
+                    -5.6f, -4.1f, -2.7f, -1.3f, 0.0f, 1.4f, 2.8f,
+                    4.2f, 5.7f, 7.1f, 7.9f, 8.8f, 9.7f, 10.5f,
+                    10.6f, 10.8f, 10.9f, 11.0f, 11.0f, 11.0f, 11.0f,
+                    11.0f, 13.4f, 15.8f, 18.1f, 20.5f, 22.8f, 25.2f,
+                    27.6f, 29.9f, 31.1f, 32.3f, 33.5f, 34.6f, 35.9f,
+                    37.0f, 38.2f, 39.4f, 40.0f, 
                 };
-                begin_frame = 91;
+                begin_frame = 250;
+                set_anim();break;
+            case ZombieType::ZombieDance:
+                // dance
+                _ground = {
+                                        -9.8f, -9.4f,
+                    -8.9f, -8.4f, -7.9f, -7.5f, -7.0f, -6.5f, -6.1f,
+                    -5.6f, -5.1f, -4.7f, -4.2f, -3.7f, -3.3f, -2.8f,
+                    -2.3f, -1.8f, -1.4f, -0.9f, -0.4f, 0.0f, 0.3f,
+                    0.8f, 1.3f, 1.8f, 2.2f, 2.6f, 3.1f, 3.6f,
+                    4.1f, 4.6f, 5.0f, 5.5f, 6.0f, 6.5f, 6.9f,
+                    7.3f, 7.8f, 8.3f, 8.8f, 9.3f, 9.7f, 10.2f,
+                    10.7f, 11.1f, 11.6f, 12.1f, 12.6f, 13.0f
+                };
+                begin_frame = 454;
                 set_anim();break;
             default:
                 _ground = {};
@@ -368,6 +381,11 @@ public:
     }
 */
 };
+
+const ZombieData zombie_walk1(ZombieType::Zombie1);
+const ZombieData zombie_walk2(ZombieType::Zombie2);
+const ZombieData zombie_dance(ZombieType::ZombieDance);
+const ZombieData zombie_swim(ZombieType::DuckyTube1);
 
 enum class PlantType {
     Gloomshroom,

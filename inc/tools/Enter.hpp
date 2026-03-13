@@ -178,6 +178,8 @@ public:
     // return break
     bool simu() {
         zombie.init();
+        if (zombie.z.type == ZombieType::ScreenDoor) 
+            zombie.z = zombie.rng.randint(2) ? zombie_walk1 : zombie_walk2;
         zombie.calculate_position();
         // printf("%d\n", zombie.t_enter);
 

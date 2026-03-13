@@ -226,6 +226,10 @@ public:
 // ==================== 位置计算器 ====================
 
 class PositionCalculator {
+    // jack: action_cd
+    // dancing: action_cd, x_target
+    // digger: x_target
+    // screendoor: 使用random.choice([Zombie1, Zombie2])
 public:
     rng rng;
 
@@ -246,6 +250,11 @@ public:
     int x_target = 40 + 20;   
     // digger 类外更新, 代表啃食植物防御左限, 默认1列南瓜
     // dancing 类外更新, 代表触碰植物防御右限，8列炮为 600 + 40
+    enum Dancecheat {
+        NONE,
+        FAST,
+        SLOW
+    } dc_type;
 
     // 过程变量
     float v0;
@@ -255,7 +264,7 @@ public:
     // 结果
     std::vector<float> x;
     int t_enter = -1; 
-    int res = -1;    // jack爆炸时机, snorkel潜入时机, 矿工站稳时机, 舞王召唤时机
+    int res = -1;    // jack爆炸时机, snorkel潜入时机, 矿工站稳时机, 舞王召唤时机, 鸭子可啃食时机
 
     PositionCalculator(
         ZombieType t, int M, bool huge_wave,
@@ -330,6 +339,9 @@ public:
         else if (z.type == ZombieType::Dancing){
             calculate_dancing();
         }
+        else if (z.type == ZombieType::DuckyTube1 || z.type == ZombieType::DuckyTube2){
+            calculate_ducky_tube();
+        }
         else{
             calculate_animation();
         }
@@ -382,6 +394,7 @@ private:
         // int end_frame = z.begin_frame + z.n_frames - 1;
         Reanim reanim(z, v0);
         reanim.init_progress();
+        ZombieData z_now = z;
 
         CdState state;
         size_t i = 1;
@@ -402,7 +415,7 @@ private:
                 if (action_cd <= 0 && res == -1) res = i;
             
             // position
-            float dx = DxCalculator::get_dx_from_ground(z, reanim, state);
+            float dx = DxCalculator::get_dx_from_ground(z_now, reanim, state);
             walk_left(dx);
 
             // enter
@@ -414,6 +427,17 @@ private:
 
             // projectile splash
             SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
+
+            // dancing cheat
+            if (dc_type == Dancecheat::NONE) continue;
+            if (z.type != ZombieType::Zombie1 && z.type != ZombieType::Zombie2) continue;
+            // update_status {}
+            v0 = v1 == 0 ? rng.randfloat(z.speed.first, z.speed.second) : v1;
+            if (dc_type == Dancecheat::FAST) 
+                z_now = rng.randint(2) ? zombie_walk1 : zombie_walk2;            
+            else 
+                z_now = zombie_dance;
+            reanim = Reanim(z_now, v0);
         }
         // end
         for (; i < M; i++) stay();
@@ -817,6 +841,89 @@ private:
             }
             // projectile splash
             SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
+        }
+        // end
+        for (; i < M; i++) stay();
+    }
+
+    void calculate_ducky_tube() {
+        int action = 0; // 0: none, 1: entering pool, 2: leaving pool
+        bool is_in_water = false;
+        float dy = 0.0f;
+        ZombieData z_now = z.type == ZombieType::DuckyTube1 ? zombie_walk1 : zombie_walk2;
+        Reanim reanim(z_now, v0);
+        reanim.init_progress();
+
+        CdState state;
+        size_t i = 1;
+        for (; i < M; i++) {
+            int t = static_cast<int>(i);
+            int x_old = int(x[i-1]);
+            // plant ice
+            if (!is_in_water)
+                IceEffect::apply(t, ice_t, frozen_t, state);
+            else 
+                IceEffect::apply_pool(t, ice_t, state);
+            // cd
+            state.tick();
+            // status
+            if (!state.is_frozen()) {
+                if (action == 1 || action == 2 || is_in_water) switch (action){
+                    // update_action_in_pool {}
+                    case 1: {// entering pool
+                        dy -= 1;
+                        if (dy <= -40) {
+                            dy = -40;
+                            action = 0;
+                            // update_status {}
+                            v0 = v1 == 0 ? rng.randfloat(z.speed.first, z.speed.second) : v1;
+                            z_now = zombie_swim;
+                            reanim = Reanim(z_now, v0);
+                        }
+                        break;
+                    }
+                    case 2: // leaving pool
+                        dy += 1;
+                        if (dy >= 0) {
+                            dy = 0;
+                            action = 0;
+                            is_in_water = false;
+                        }
+                        break;
+                }
+            }
+            // position
+            float dx = DxCalculator::get_dx_from_ground(z_now, reanim, state);
+            walk_left(dx);
+
+            // water status
+            bool current_in_water = 40 <= x_old && x_old < 680;
+            if (is_in_water && !current_in_water) {
+                action = 2; // leaving pool
+                // update_status {}
+                v0 = v1 == 0 ? rng.randfloat(z.speed.first, z.speed.second) : v1;
+                z_now = rng.randint(2) ? zombie_walk1 : zombie_walk2;
+                reanim = Reanim(z_now, v0);
+            }
+            else if (!is_in_water && current_in_water) {
+                action = 1; // entering pool
+                is_in_water = true;
+                if (res == -1) res = i + 1; // 进入池塘的下一帧算作可啃食时机
+            }
+
+            // enter
+            if (check_enter(x[i-1], t)) {i++; break;}
+
+            // progress
+            reanim.update(state);
+            reanim.wrap();
+
+            // projectile splash
+            SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
+
+            // dancing cheat
+            if (dc_type == Dancecheat::NONE) continue;
+            // TODO
         }
         // end
         for (; i < M; i++) stay();

@@ -4,7 +4,7 @@
 #include <atomic>
 # include "inc/util.hpp"
 using namespace std;
-const int M = 200;
+const int M = 7000;
 
 
 void cal_x(
@@ -19,6 +19,7 @@ void cal_x(
     if (v0 != 0.0f) cal.v0 = v0;
     if (v1 != 0.0f) cal.v1 = v1;
     if (x0 != 0)    cal.x[0] = static_cast<float>(x0);
+    // 舞王rnd
     cal.action_cd = cal.rng.randint(12);
     cal.action_cd = 0;
         
@@ -262,17 +263,17 @@ int main(){
     );
 //*/
     
-///*
+/*
     cal_x_extrem(
-        ZombieType::Flag, M, false, 
+        ZombieType::DuckyTube1, M, false, 
         {}, {}, 
         PositionCalculator::TypeCal::FASTEST,
         true
     );
 //*/
-/*
+///*
     cal_x(
-        ZombieType::Zombie1, M, false, 
+        ZombieType::DuckyTube1, M, false, 
         {}, {}, 
         PositionCalculator::TypeCal::FASTEST
         // , 780+31

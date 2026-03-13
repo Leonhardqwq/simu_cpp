@@ -226,10 +226,8 @@ public:
 // ==================== 位置计算器 ====================
 
 class PositionCalculator {
-private:
-    rng rng;
-
 public:
+    rng rng;
     // 自动入参
     int M;
     ZombieData z;

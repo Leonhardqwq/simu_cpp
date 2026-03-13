@@ -1,13 +1,7 @@
 # include "../inc/calculate_position_v2.hpp"
-# include "../inc/calculate_hit_time.hpp"
-# include "../inc/util.hpp"
-# include <atomic>
-#include <cstdint>
-#include <cstdio>
 #include <map>
 #include <string>
 #include <utility>
-#include <vector>
 using namespace std;
 const int M = 11000;
 
@@ -50,13 +44,13 @@ void cal(int ice_t = 0, PositionCalculator::TypeCal type_cal = PositionCalculato
         const string& name = item.name;
         ZombieType zombie_type = item.zombie_type;
         bool huge_wave = item.huge_wave;
-        printf("%s\n", name.c_str());
+        printf("%s %s\n", name.c_str(), output_file.c_str());
 
         vector<float> x;
         if (zombie_type == ZombieType::Unknown) {
             x.resize(M, NAN);
         }
-        else if (zombie_type == ZombieType::Zombie1) {
+        else if (zombie_type == ZombieType::Zombie1 || zombie_type == ZombieType::ScreenDoor) {
             auto x1 = cal_x_extrem(
                 ZombieType::Zombie1, M, huge_wave, {ice_t}, {}, 
                 type_cal, true, false
@@ -105,7 +99,7 @@ void cal(int ice_t = 0, PositionCalculator::TypeCal type_cal = PositionCalculato
 }
 int main(){
     for (int ice_t : {
-        // 0, 1,
+        0, 1,
         11, 12, 96
     }) {
         cal(ice_t, PositionCalculator::TypeCal::FASTEST, "data/" + to_string(ice_t) + "_fast.csv");
