@@ -12,7 +12,7 @@ using namespace std;
 const int M = 11000;
 
 
-void cal(int ice_t = 0, PositionCalculator::TypeCal type_cal = PositionCalculator::TypeCal::FASTEST){
+void cal(int ice_t = 0, PositionCalculator::TypeCal type_cal = PositionCalculator::TypeCal::FASTEST, string output_file = "x_table.csv") {
     struct ConfigItem {
         string name;
         ZombieType zombie_type;
@@ -101,9 +101,15 @@ void cal(int ice_t = 0, PositionCalculator::TypeCal type_cal = PositionCalculato
         x_table.push_back(x);
     }
     
-    write_2dvector_to_csv(x_table, "x_table.csv", true);
+    write_2dvector_to_csv(x_table, output_file, true);
 }
 int main(){
-    cal(0, PositionCalculator::TypeCal::SLOWEST);
+    for (int ice_t : {
+        // 0, 1,
+        11, 12, 96
+    }) {
+        cal(ice_t, PositionCalculator::TypeCal::FASTEST, "data/" + to_string(ice_t) + "_fast.csv");
+        cal(ice_t, PositionCalculator::TypeCal::SLOWEST, "data/" + to_string(ice_t) + "_slow.csv");
+    }
     return 0;
 }

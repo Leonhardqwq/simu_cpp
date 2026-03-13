@@ -825,7 +825,8 @@ private:
 
 std::vector<float> cal_x_extrem(
     ZombieType type, int M_sup, bool huge_wave, std::vector<int> ice_t, std::vector<int> splash_t,
-    PositionCalculator::TypeCal test_type_zombie=PositionCalculator::TypeCal::FASTEST, bool parallel = false, bool output = true
+    PositionCalculator::TypeCal test_type_zombie=PositionCalculator::TypeCal::FASTEST, bool parallel = false, bool output = true,
+    float v0 = 0.0f, float v1 = 0.0f
 ){
     PositionCalculator cal(type, M_sup, huge_wave, ice_t, splash_t);
     cal.type_cal = test_type_zombie;
@@ -841,7 +842,15 @@ std::vector<float> cal_x_extrem(
 
         for(auto i = v_ull_start; i <= v_ull_end; ++i){
             cal.init();
-            cal.v0 = bit_cast<float>(i);
+            if (v0 != 0.0f && v1 == 0.0f) {
+                cal.v1 = bit_cast<float>(i);
+                cal.v0 = v0;            
+            }
+            else {
+                cal.v0 = bit_cast<float>(i);
+                if (v1 != 0.0f)
+                    cal.v1 = v1;
+            }
             cal.calculate_position();
             for(int j=0;j<M_sup;j++)
                 if(cal.x[j]<x[j] && cal.type_cal == PositionCalculator::TypeCal::FASTEST)
@@ -881,7 +890,15 @@ std::vector<float> cal_x_extrem(
                 uint32_t end = (t == n_threads - 1) ? v_ull_end : v_ull_start + (t + 1) * total / n_threads - 1;
                 for (uint32_t i = start; i <= end; ++i) {
                     cal_local.init();
-                    cal_local.v0 = bit_cast<float>(i);
+                    if (v0 != 0.0f && v1 == 0.0f) {
+                        cal_local.v1 = bit_cast<float>(i);
+                        cal_local.v0 = v0;            
+                    }
+                    else {
+                        cal_local.v0 = bit_cast<float>(i);
+                        if (v1 != 0.0f)
+                            cal_local.v1 = v1;
+                    }
                     cal_local.calculate_position();
                     for (int j = 0; j < M_sup; j++) {
                         if (cal_local.type_cal == PositionCalculator::TypeCal::FASTEST) {

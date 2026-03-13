@@ -6,7 +6,7 @@
 enum class ZombieType {
     PoleVaulting,
     Newspaper,
-    ScreenDoor,
+    ScreenDoor, // walk2
     Football,
     Snorkel,
     Zomboni,
@@ -68,7 +68,7 @@ public:
 
         // spawn_offset, spawn_hugewave_offset
         switch (type) {
-            case ZombieType::Flag:          spawn_offset = 0;spawn_hugewave_offset = 0; break;
+            case ZombieType::Flag:          spawn_offset = 1;spawn_hugewave_offset = 0; break;
             case ZombieType::PoleVaulting:  
             case ZombieType::Zomboni:       
             case ZombieType::Catapult:
