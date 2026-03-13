@@ -98,7 +98,7 @@ public:
             case ZombieType::DuckyTube2:   
             case ZombieType::ZombieDance:   speed = {double(0.23f), double(0.37f)}; break;
 
-            case ZombieType::Zomboni:       speed = {double(0.0f), double(0.0f)}; break;
+            case ZombieType::Zomboni:       speed = {double(100.0f), double(100.0f)}; break;
 
             case ZombieType::DolphinRider:  speed = {double(0.89f), double(0.91f)}; break;
 

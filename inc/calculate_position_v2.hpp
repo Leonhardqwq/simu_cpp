@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <atomic>
 
+
 // ==================== 封装工具 ====================
 
 // 冰冻/减速倒计时管理
@@ -399,6 +400,21 @@ private:
         CdState state;
         size_t i = 1;
         for (; i < M; i++) {
+            // dancing cheat
+            if (
+                dc_type != Dancecheat::NONE && 
+                (z.type == ZombieType::Zombie1 || z.type == ZombieType::Zombie2)
+            ) {
+                // update_status {}
+                if (i != 1)
+                    v0 = v1 == 0 ? rng.randfloat(z_now.speed.first, z_now.speed.second) : v1;
+                if (dc_type == Dancecheat::FAST) 
+                    z_now = rng.randint(2) ? zombie_walk1 : zombie_walk2;            
+                else 
+                    z_now = zombie_dance;
+                reanim = Reanim(z_now, v0);
+            }
+            
             int t = static_cast<int>(i);
             
             // plant ice
@@ -427,17 +443,6 @@ private:
 
             // projectile splash
             SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
-
-            // dancing cheat
-            if (dc_type == Dancecheat::NONE) continue;
-            if (z.type != ZombieType::Zombie1 && z.type != ZombieType::Zombie2) continue;
-            // update_status {}
-            v0 = v1 == 0 ? rng.randfloat(z.speed.first, z.speed.second) : v1;
-            if (dc_type == Dancecheat::FAST) 
-                z_now = rng.randint(2) ? zombie_walk1 : zombie_walk2;            
-            else 
-                z_now = zombie_dance;
-            reanim = Reanim(z_now, v0);
         }
         // end
         for (; i < M; i++) stay();
@@ -857,6 +862,9 @@ private:
         CdState state;
         size_t i = 1;
         for (; i < M; i++) {
+            // dancing cheat
+            if (dc_type != Dancecheat::NONE) {/*TODO*/}
+            
             int t = static_cast<int>(i);
             int x_old = int(x[i-1]);
             // plant ice
@@ -876,7 +884,7 @@ private:
                             dy = -40;
                             action = 0;
                             // update_status {}
-                            v0 = v1 == 0 ? rng.randfloat(z.speed.first, z.speed.second) : v1;
+                            v0 = v1 == 0 ? rng.randfloat(z_now.speed.first, z_now.speed.second) : v1;
                             z_now = zombie_swim;
                             reanim = Reanim(z_now, v0);
                         }
@@ -901,7 +909,7 @@ private:
             if (is_in_water && !current_in_water) {
                 action = 2; // leaving pool
                 // update_status {}
-                v0 = v1 == 0 ? rng.randfloat(z.speed.first, z.speed.second) : v1;
+                v0 = v1 == 0 ? rng.randfloat(z_now.speed.first, z_now.speed.second) : v1;
                 z_now = rng.randint(2) ? zombie_walk1 : zombie_walk2;
                 reanim = Reanim(z_now, v0);
             }
@@ -920,15 +928,14 @@ private:
 
             // projectile splash
             SplashEffect::apply(t, splash_t, x[i], z.def_x.first, state);
-
-            // dancing cheat
-            if (dc_type == Dancecheat::NONE) continue;
-            // TODO
         }
         // end
         for (; i < M; i++) stay();
     }
 };
+
+
+// ===================== 极值计算 ====================
 
 std::vector<float> cal_x_extrem(
     ZombieType type, int M_sup, bool huge_wave, std::vector<int> ice_t, std::vector<int> splash_t,
@@ -982,19 +989,19 @@ std::vector<float> cal_x_extrem(
         std::atomic<int> finished(0);
 
         std::vector<std::vector<float>> x_threads(n_threads);
-        for (auto& x : x_threads) {
+        for (auto& xx : x_threads) {
             if (cal.type_cal == PositionCalculator::TypeCal::FASTEST)
-                x.resize(M_sup, 1000.0f);
+                xx.resize(M_sup, 1000.0f);
             else
-                x.resize(M_sup, -1000.0f);
+                xx.resize(M_sup, -1000.0f);
         }
 
         std::vector<std::thread> threads;
         for (unsigned int t = 0; t < n_threads; ++t) {
             threads.emplace_back([&, t]() {
-                /// 
                 PositionCalculator cal_local(cal.z.type, cal.M, cal.huge_wave, cal.ice_t, cal.splash_t);
                 cal_local.type_cal = cal.type_cal;
+                cal_local.dc_type = cal.dc_type;
                 uint32_t start = v_ull_start + t * total / n_threads;
                 uint32_t end = (t == n_threads - 1) ? v_ull_end : v_ull_start + (t + 1) * total / n_threads - 1;
                 for (uint32_t i = start; i <= end; ++i) {
@@ -1047,5 +1054,114 @@ std::vector<float> cal_x_extrem(
         if (output)
             write_vector_to_csv(x, "output.csv",true);
     }
+    return x;
+}
+
+std::vector<float> cal_digger_x_extrem(
+    int M_sup, bool huge_wave, std::vector<int> ice_t, 
+    PositionCalculator::TypeCal test_type_zombie=PositionCalculator::TypeCal::FASTEST,
+    bool parallel = false, bool output = true
+) {
+    PositionCalculator cal(ZombieType::Digger, M_sup, huge_wave, ice_t, {});
+    cal.type_cal = test_type_zombie;
+    std::vector<float> x_min, x_max;
+    x_min.resize(M_sup, 1000.0f);
+    x_max.resize(M_sup, -1000.0f);
+    auto v_range = cal.z.speed;
+    auto v_ull_start = bit_cast<uint32_t>(static_cast<float>(v_range.first));
+    auto v_ull_end = bit_cast<uint32_t>(static_cast<float>(v_range.second));
+    if (!parallel){
+        for(auto i = v_ull_start; i <= v_ull_end; ++i){
+            cal.init();
+            cal.v0 = bit_cast<float>(i);
+            cal.calculate_position();
+            for(int j=0;j<M_sup;j++){
+                if (cal.x[j] < x_min[j])
+                    x_min[j] = cal.x[j];
+                if (cal.x[j] > x_max[j])
+                    x_max[j] = cal.x[j];
+            }
+
+            if (i% 10000 == 0) {
+                printf("%u %u %u\n", v_ull_start, i, v_ull_end);
+            }
+        }
+    }
+    else{
+        uint32_t total = v_ull_end - v_ull_start + 1;
+
+        unsigned int n_threads = std::thread::hardware_concurrency();
+        if (n_threads == 0) n_threads = 4; // fallback
+
+        std::atomic<int> finished(0);
+
+        std::vector<std::vector<float>> x_min_threads(n_threads);
+        std::vector<std::vector<float>> x_max_threads(n_threads);
+        for (auto& xx: x_min_threads) 
+            xx.resize(M_sup, 1000.0f);
+        for (auto& xx : x_max_threads) 
+            xx.resize(M_sup, -1000.0f);
+
+
+        std::vector<std::thread> threads;
+        for (unsigned int t = 0; t < n_threads; ++t) {
+            threads.emplace_back([&, t]() {
+                PositionCalculator cal_local(cal.z.type, cal.M, cal.huge_wave, cal.ice_t, cal.splash_t);
+                cal_local.type_cal = cal.type_cal;
+                uint32_t start = v_ull_start + t * total / n_threads;
+                uint32_t end = (t == n_threads - 1) ? v_ull_end : v_ull_start + (t + 1) * total / n_threads - 1;
+                for (uint32_t i = start; i <= end; ++i) {
+                    cal_local.init();
+                    cal_local.v0 = bit_cast<float>(i);
+                    cal_local.calculate_position();
+                    for(int j=0;j<M_sup;j++){
+                        if (cal_local.x[j] < x_min_threads[t][j])
+                            x_min_threads[t][j] = cal_local.x[j];
+                        if (cal_local.x[j] > x_max_threads[t][j])
+                            x_max_threads[t][j] = cal_local.x[j];
+                    }
+                    finished++;
+                }
+            });
+        }
+
+        while (finished < total) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            printf("%5.5f%%\n", 100.0 * finished.load() / total);
+            fflush(stdout);
+        }
+        for (auto& th : threads) th.join();
+
+        // 合并结果        
+        for (unsigned int t = 0; t < n_threads; ++t) {
+            for (int j = 0; j < M_sup; ++j) {
+                if (x_min_threads[t][j] < x_min[j]) x_min[j] = x_min_threads[t][j];
+                if (x_max_threads[t][j] > x_max[j]) x_max[j] = x_max_threads[t][j];
+            }
+        }
+    }
+    std::vector<float> x;
+    bool all_move_right = false;
+    bool first_move_right = false;
+    if (test_type_zombie == PositionCalculator::TypeCal::FASTEST) {
+        for (int j = 0; j < M_sup; ++j) {
+            if (!all_move_right && x_max[j] < 10.0f) all_move_right = true;
+            if (!first_move_right && x_min[j] < 10.0f) first_move_right = true;
+            if (all_move_right) 
+                x.push_back(x_max[j]);
+            else if (first_move_right)
+                x.push_back(bit_cast<float>(bit_cast<uint32_t>(10.0f)-1)); // 10.0f
+            else 
+                x.push_back(x_min[j]);
+        }
+    }
+    else {
+        for (int j = 0; j < M_sup; ++j) {
+            if (!all_move_right && x_max[j] < 10.0f) all_move_right = true;
+            x.push_back(all_move_right ? x_min[j] : x_max[j]);
+        }
+    }
+    if (output)
+        write_vector_to_csv(x, "output.csv", true);
     return x;
 }
