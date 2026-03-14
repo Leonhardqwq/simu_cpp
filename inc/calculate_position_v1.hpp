@@ -807,7 +807,7 @@ private:
         for (; i < M; i++) stay();
     }
 };
-
+/*
 void cal_x(
     ZombieType type, int M_sup, bool huge_wave, std::vector<int> ice_t, std::vector<int> splash_t,
     PositionCalculator::TypeCal test_type_zombie, 
@@ -825,7 +825,7 @@ void cal_x(
     write_vector_to_csv(cal.x, "output.csv",true);
     printf("%d %d\n", cal.t_enter,cal.res);
 }
-
+*/
 std::vector<float> cal_x_extrem(
     ZombieType type, int M_sup, bool huge_wave, std::vector<int> ice_t, std::vector<int> splash_t,
     PositionCalculator::TypeCal test_type_zombie=PositionCalculator::TypeCal::FASTEST, bool parallel = false, bool output = true

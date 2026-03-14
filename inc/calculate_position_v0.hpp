@@ -7,10 +7,8 @@
 
 
 class PositionCalculator {
-private:
-    rng rng;
-
 public:
+    rng rng;
     // 自动入参
     int M;
     ZombieData z;
@@ -954,7 +952,7 @@ private:
     }
 
 };
-
+/*
 void cal_x(
     ZombieType type, int M_sup, bool huge_wave, std::vector<int> ice_t, std::vector<int> splash_t,
     PositionCalculator::TypeCal test_type_zombie, 
@@ -971,7 +969,7 @@ void cal_x(
     write_vector_to_csv(cal.x, "output.csv",true);
     printf("%d %d\n", cal.t_enter,cal.res);
 }
-
+*/
 void cal_x_extrem(
     ZombieType type, int M_sup, bool huge_wave, std::vector<int> ice_t, std::vector<int> splash_t,
     PositionCalculator::TypeCal test_type_zombie=PositionCalculator::TypeCal::FASTEST, bool parallel = false

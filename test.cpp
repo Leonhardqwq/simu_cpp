@@ -4,7 +4,7 @@
 #include <atomic>
 # include "inc/util.hpp"
 using namespace std;
-const int M = 7000;
+const int M = 3000;
 
 
 void cal_x(
@@ -17,7 +17,7 @@ void cal_x(
 
     cal.init();
     if (v0 != 0.0f) cal.v0 = v0;
-    if (v1 != 0.0f) cal.v1 = v1;
+    // if (v1 != 0.0f) cal.v1 = v1;
     if (x0 != 0)    cal.x[0] = static_cast<float>(x0);
     // 舞王rnd
     cal.action_cd = cal.rng.randint(12);
@@ -136,30 +136,10 @@ void test_T(){
 }
 
 void test_tmp(PositionCalculator::TypeCal type_cal){
-    auto x1 = cal_x_extrem(
-        ZombieType::Zombie1, M, false, 
-        {}, {}, 
-        type_cal,
-        true, false
-    );
-    auto x2 = cal_x_extrem(
-        ZombieType::Zombie2, M, false, 
-        {}, {}, 
-        type_cal,
-        true, false
-    );
-    vector<float> x;
-    for (size_t i = 0; i < x1.size(); ++i) {
-        if (type_cal == PositionCalculator::TypeCal::FASTEST)
-            x.push_back(min(x1[i], x2[i]));
-        else
-            x.push_back(max(x1[i], x2[i]));
-    }
-    write_vector_to_csv(x, "output.csv",true);
 }
 
 int main(){
-///*
+/*
     cal_digger_x_extrem(
         M, false, 
         {}, 
@@ -168,11 +148,11 @@ int main(){
     );
 //*/
     
-/*
+///*
     cal_x_extrem(
-        ZombieType::Zomboni, M, false, 
-        {}, {}, 
-        PositionCalculator::TypeCal::SLOWEST,
+        ZombieType::Balloon, M, false, 
+        {1}, {}, 
+        PositionCalculator::TypeCal::FASTEST,
         true
     );
 //*/
