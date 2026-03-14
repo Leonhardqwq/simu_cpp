@@ -887,6 +887,7 @@ private:
                             v0 = v1 == 0 ? rng.randfloat(z_now.speed.first, z_now.speed.second) : v1;
                             z_now = zombie_swim;
                             reanim = Reanim(z_now, v0);
+                            if (res == -1) res = i; // 进入池塘的一帧算作可啃食时机
                         }
                         break;
                     }
@@ -916,7 +917,6 @@ private:
             else if (!is_in_water && current_in_water) {
                 action = 1; // entering pool
                 is_in_water = true;
-                if (res == -1) res = i + 1; // 进入池塘的下一帧算作可啃食时机
             }
 
             // enter
