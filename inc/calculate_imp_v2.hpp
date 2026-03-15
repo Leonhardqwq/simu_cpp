@@ -13,7 +13,7 @@ public:
     Scene scene=Scene::POOL;
     float randfloat100=-1;
     float x_giga;
-    unsigned int row_giga;
+    unsigned int row_giga;     // row_giga: [0, 5]
     CdState state_giga;
     bool higher_imp = false;
 
@@ -167,4 +167,5 @@ public:
         }
     }
     
+    int get_judge_y(float y, float dy) const {return int(int(y) - dy);}
 };
