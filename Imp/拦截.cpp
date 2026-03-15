@@ -179,11 +179,10 @@ void calc_extrem(Scene scene, int M = 500, bool parallel = false) {
 
 // 遍历巨人坐标，获取小鬼轨迹
 // 输出格式，四张表，一张为x，一张为y
-void calc_trajectory(Scene scene, int M = 500) {
+void calc_trajectory(Scene scene, int M = 500, int row = 0) {
     float x_start = 700.0f;
     float x_end = 720.0f;
     float x_step = 0.1f;
-    int row = 0;
     std::vector<std::vector<int>> traj_x0, traj_y0, traj_x1, traj_y1;
     for (float x = x_start; x <= x_end + 1e-6f; x += x_step) {
         ImpCalculator cal0(M, scene, 0.0f, x, row, CdState{0, 0}, 0);
@@ -213,7 +212,7 @@ int main() {
     // print_imp();
     // calc_extrem(Scene::DAY, 209, true);
     // rnd_scan();
-    calc_trajectory(Scene::DAY, 209);
+    calc_trajectory(Scene::DAY, 209, 0);
 
     return 0;
 }
