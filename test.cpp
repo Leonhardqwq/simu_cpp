@@ -2,9 +2,10 @@
 # include "inc/calculate_position_v2.hpp"
 # include "inc/calculate_hit_time.hpp"
 #include <atomic>
+#include <vector>
 # include "inc/util.hpp"
 using namespace std;
-const int M = 3000;
+const int M = 5000;
 
 
 void cal_x(
@@ -26,6 +27,25 @@ void cal_x(
     cal.calculate_position();
     write_vector_to_csv(cal.x, "output.csv",true);
     printf("%d %d\n", cal.t_enter,cal.res);
+}
+
+void cal_x_extrem_both(ZombieType type, int M_sup, bool huge_wave, std::vector<int> ice_t, std::vector<int> splash_t){
+    vector<vector<float>> x;
+    x.push_back(
+        cal_x_extrem(
+            type, M_sup, huge_wave, 
+            ice_t, splash_t, 
+            PositionCalculator::TypeCal::FASTEST,
+            true,false
+    ));
+    x.push_back(
+        cal_x_extrem(
+            type, M_sup, huge_wave, 
+            ice_t, splash_t, 
+            PositionCalculator::TypeCal::SLOWEST,
+            true,false
+    ));
+    write_2dvector_to_csv(x, "output.csv", true);
 }
 
 
@@ -149,20 +169,18 @@ int main(){
 //*/
     
 ///*
-    cal_x_extrem(
-        ZombieType::Balloon, M, false, 
-        {1}, {}, 
-        PositionCalculator::TypeCal::FASTEST,
-        true
+    cal_x_extrem_both(
+        ZombieType::Gargantuar, M, false, 
+        {100, }, {}
     );
 //*/
 /*
     cal_x(
-        ZombieType::DuckyTube1, M, false, 
+        ZombieType::DuckyTube2, M, false, 
         {}, {}, 
         PositionCalculator::TypeCal::FASTEST
-        // , 780+31
-        // , 0.89001f
+        , 780
+        , 0.37f
         // , 0.90773f
     );
 //*/
