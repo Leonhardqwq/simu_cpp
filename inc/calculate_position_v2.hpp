@@ -398,6 +398,7 @@ private:
         ZombieData z_now = z;
 
         CdState state;
+        // state.slow_cd = 100000; // 测试用，始终减速
         size_t i = 1;
         for (; i < M; i++) {
             // dancing cheat

@@ -27,6 +27,7 @@ enum class ZombieType {
     DuckyTube1,
     DuckyTube2,
     ZombieDance, // dance
+    PoleVaulting_Walk, 
     Unknown
 };
 
@@ -59,6 +60,7 @@ public:
     void init(){
         // spawn_l
         switch (type) {
+            case ZombieType::PoleVaulting_Walk:
             case ZombieType::PoleVaulting:  spawn_l = 870;break;
             case ZombieType::Zomboni:       spawn_l = 800;break;
             case ZombieType::Catapult_Shoot:
@@ -73,6 +75,7 @@ public:
         switch (type) {
             case ZombieType::Flag:          spawn_offset = 1;spawn_hugewave_offset = 0; break;
             case ZombieType::PoleVaulting:  
+            case ZombieType::PoleVaulting_Walk:
             case ZombieType::Zomboni:       
             case ZombieType::Catapult:
             case ZombieType::Catapult_Shoot:
@@ -95,7 +98,8 @@ public:
             case ZombieType::Zombie1:
             case ZombieType::Zombie2:             
             case ZombieType::DuckyTube1:     
-            case ZombieType::DuckyTube2:   
+            case ZombieType::DuckyTube2:  
+            case ZombieType::PoleVaulting_Walk: 
             case ZombieType::ZombieDance:   speed = {double(0.23f), double(0.37f)}; break;
 
             case ZombieType::Zomboni:       speed = {double(100.0f), double(100.0f)}; break;
@@ -131,6 +135,7 @@ public:
             case ZombieType::PoleVaulting:  
             case ZombieType::DolphinRider:  atk = {-29, 41}; break;
 
+            case ZombieType::PoleVaulting_Walk:
             case ZombieType::Football:      
             case ZombieType::Digger:        
             case ZombieType::Dancing:       atk = {50, 70}; break;
@@ -146,7 +151,8 @@ public:
 
         // hp
         switch (type) {
-            case ZombieType::PoleVaulting:      
+            case ZombieType::PoleVaulting:  
+            case ZombieType::PoleVaulting_Walk:    
             case ZombieType::DolphinRider:      
             case ZombieType::JackInTheBox:      
             case ZombieType::Ladder:            
@@ -170,6 +176,7 @@ public:
         // threshold
         switch (type) {
             case ZombieType::PoleVaulting:
+            case ZombieType::PoleVaulting_Walk:
             case ZombieType::Gargantuar:
             case ZombieType::GigaGargantuar:
                 threshold = -150;
@@ -202,6 +209,17 @@ public:
                     -46.5f, -45.7f, -44.8f, -44.0f, -43.2f, -42.3f, -41.5f,
                     -40.7f, -39.8f, -39.0f, -38.2f, -37.3f, -36.5f, -35.7f,
                     -34.8f, -34.0f, -33.2f, -32.3f, -31.5f, -30.7f, -29.8f,
+                };
+                set_anim();break;
+            case ZombieType::PoleVaulting_Walk:
+                _ground = {
+                                    -59.8f, -59.1f, -58.3f, -57.6f, -56.9f, -55.0f,
+                    -53.0f, -51.1f, -49.2f, -47.2f, -45.1f, -43.1f, -41.1f,
+                    -39.0f, -37.0f, -35.0f, -32.9f, -30.9f, -28.9f, -27.0f,
+                    -25.0f, -23.0f, -21.0f, -19.0f, -17.0f, -14.7f, -12.3f,
+                    -10.0f, -7.7f, -5.8f, -3.9f, -2.0f, -0.1f, 1.6f,
+                    3.5f, 5.4f, 7.3f, 7.5f, 7.8f, 8.0f, 8.2f,
+                    8.2f, 8.1f, 8.0f, 8.0f, 
                 };
                 set_anim();break;
             case ZombieType::Newspaper:
