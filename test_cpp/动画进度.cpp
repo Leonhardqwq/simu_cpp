@@ -3,8 +3,8 @@
 # include <iomanip>
 #include <vector>
 
-# include "inc/calculate_position_v2.hpp"
-# include "inc/util.hpp"
+# include "../inc/calculate_position_v2.hpp"
+# include "../inc/util.hpp"
 
 using namespace std;
 const int M = 400; // 215 小鬼落地

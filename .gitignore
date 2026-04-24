@@ -4,7 +4,7 @@ __pycache__/
 .DS_Store
 *.bin
 
-万能表/data
+universal_table/data
 test
 Digger_1_0
 Jack_cpp_1_0

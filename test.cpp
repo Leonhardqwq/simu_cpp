@@ -155,10 +155,19 @@ void test_T(){
     std::cout<<- cal.x[T] + cal.x[0];
 }
 
-void test_tmp(PositionCalculator::TypeCal type_cal){
+
+void test_tmp(float x_z, int x_p){
+
 }
 
 int main(){
+/*
+    cal_x_extrem_both(
+        ZombieType::Gargantuar, M, false, 
+        {100, }, {}
+    );
+//*/
+
 /*
     cal_digger_x_extrem(
         M, false, 
@@ -167,13 +176,8 @@ int main(){
         true, true
     );
 //*/
-    
-///*
-    cal_x_extrem_both(
-        ZombieType::Gargantuar, M, false, 
-        {100, }, {}
-    );
-//*/
+    // cal_pole_vault_x_extrem();
+
 /*
     cal_x(
         ZombieType::DuckyTube2, M, false, 

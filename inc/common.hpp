@@ -460,6 +460,53 @@ public:
 
 };
 
+enum class PlantDefType {
+    Normal,
+    Pumpkin,
+    TallNut,
+    CobCannon,
+    Unknown
+};
+
+class PlantDefData{
+public:
+    PlantDefType type;
+    int col=0, x=0, offset=5;
+    // col 1~9, offset -5~4
+    std::pair<int, int> def;
+
+    PlantDefData(PlantDefType t) : type(t) {get_def();}
+    PlantDefData(PlantDefType t, int col) : type(t), col(col) {get_def();set_x();}
+    PlantDefData(PlantDefType t, int col, int offset) : type(t), col(col), offset(offset) {get_def();set_x();}
+
+    void get_def(){
+        switch (type){
+            case PlantDefType::Pumpkin:
+                def = {+20, +80};
+                break;
+            case PlantDefType::TallNut:
+                def = {+30, +70};
+                break;
+            case PlantDefType::CobCannon:
+                def = {+20, +120};
+                break;
+            default:
+                def = {+30, +50};
+                break;
+        }
+    }
+
+    void set_x(){
+        if (col < 1 || col > 9) return;
+        x = col * 80 - 40;
+        if ((offset < -5 || offset > 4) || type != PlantDefType::Normal) return;
+        x += offset;
+    }
+
+    void set_col(int c){col = c;set_x();}
+    void set_offset(int o){offset = o;set_x();}
+};
+
 enum Scene {
     DAY,
     NIGHT,
