@@ -28,6 +28,7 @@ enum class ZombieType {
     DuckyTube2,
     ZombieDance, // dance
     PoleVaulting_Walk, 
+    DolphinRider_Swim,
     Unknown
 };
 
@@ -100,6 +101,7 @@ public:
             case ZombieType::DuckyTube1:     
             case ZombieType::DuckyTube2:  
             case ZombieType::PoleVaulting_Walk: 
+            case ZombieType::DolphinRider_Swim:
             case ZombieType::ZombieDance:   speed = {double(0.23f), double(0.37f)}; break;
 
             case ZombieType::Zomboni:       speed = {double(100.0f), double(100.0f)}; break;
@@ -135,6 +137,8 @@ public:
             case ZombieType::PoleVaulting:  
             case ZombieType::DolphinRider:  atk = {-29, 41}; break;
 
+            case ZombieType::DolphinRider_Swim: atk = {30, 60}; break;
+
             case ZombieType::PoleVaulting_Walk:
             case ZombieType::Football:      
             case ZombieType::Digger:        
@@ -153,7 +157,8 @@ public:
         switch (type) {
             case ZombieType::PoleVaulting:  
             case ZombieType::PoleVaulting_Walk:    
-            case ZombieType::DolphinRider:      
+            case ZombieType::DolphinRider:     
+            case ZombieType::DolphinRider_Swim:  
             case ZombieType::JackInTheBox:      
             case ZombieType::Ladder:            
             case ZombieType::Pogo:
@@ -265,6 +270,18 @@ public:
                     -3.8f, -2.0f, -0.2f, 1.5f,   
                 };
                 begin_frame = 15;
+                set_anim();break;
+            case ZombieType::DolphinRider_Swim:
+                _ground = {      
+                                                            -59.8f, -59.0f, -58.1f,
+                    -57.2f, -56.3f, -55.5f, -52.7f, -49.9f, -47.2f, -45.9f,
+                    -44.6f, -43.3f, -42.1f, -40.9f, -39.7f, -38.5f, -37.3f,
+                    -36.4f, -35.4f, -34.5f, -33.6f, -32.6f, -31.2f, -29.8f,
+                    -28.4f, -27.0f, -25.6f, -24.0f, -22.3f, -20.7f, -19.1f,
+                    -17.4f, -15.4f, -13.3f, -11.3f, -9.2f, -7.4f, -5.6f,
+                    -3.8f, -2.0f, -0.2f, 1.5f, 
+                };
+                begin_frame = 208;
                 set_anim();break;
             case ZombieType::JackInTheBox:
                 _ground = {        
