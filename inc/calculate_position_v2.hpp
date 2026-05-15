@@ -1166,3 +1166,28 @@ std::vector<float> cal_digger_x_extrem(
         write_vector_to_csv(x, "output.csv", true);
     return x;
 }
+
+// 非匀速行走极值计算，减速行走需要搜索“测试”修改初始减速条件
+std::vector<std::vector<float>> cal_anim_x_extrem(ZombieType type, int M_sup = 500, bool output = true) {
+    std::vector<std::vector<float>> x, y={{},{}};
+    x.push_back(
+        cal_x_extrem(
+            type, M_sup, 0, {}, {},
+            PositionCalculator::TypeCal::FASTEST,
+            true,false
+    ));
+    x.push_back(
+        cal_x_extrem(
+            type, M_sup, 0, {}, {},
+            PositionCalculator::TypeCal::SLOWEST,
+            true,false
+    ));
+    ZombieData z(type);
+    for (size_t i = 1; i < x[0].size(); ++i) {
+        y[0].push_back(z.spawn_l - x[0][i]);
+        y[1].push_back((z.spawn_l+z.spawn_offset-1) - x[1][i]);
+    }
+    if (output)
+        write_2dvector_to_csv(y, "output.csv", true);
+    return y;
+}

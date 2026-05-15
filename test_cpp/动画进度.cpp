@@ -14,13 +14,15 @@ void test_reanim() {
     // 16, 33 巨人砸 0.64f
     // 24, 34 巨人投 0.74f
     // 24, 10 舞王
-    // 24, 43
-    Reanim reanim(24, 43);
+    // 24, 43 撑杆跳跃
+    // 16, 45 海豚入水
+    // 10, 23 海豚跳跃
+    Reanim reanim(16, 45);
     // Reanim reanim(ZombieData(ZombieType::Dancing), 0.5f);
     CdState state;
     int n_repeated = 0;
     vector<float> thresholds = {
-        0.6f
+        0.49f
     };
 
     state.slow_cd = 0;

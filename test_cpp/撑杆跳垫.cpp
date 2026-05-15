@@ -1,29 +1,12 @@
+// 海豚起跳坐标的亚像素部分对啃食时机有影响，越左起跳，总路程里骑行的部分越多，水中行走的越少，啃食时机越早
+// 但是最早起跳的海豚亚像素情况可能并非最优
+// 感觉这是个不小的问题，之前撑杆的结论可能也有问题
+// 如果跳过的植物是垫材这种某个时机放下去的，那确实可以按极快表取一个跳跃前路程最长的时机下垫
+// 但是如果跳过的植物是长期存在的，那这里的亚像素情况怎么算最优呢
+// 遍历浮点数好像能解决这个问题，但是就得对每种用冰情况都遍历，不能直接用减速波万能表的结论了
 # include "../inc/calculate_position_v2.hpp"
 # include "../inc/util.hpp"
 
-// 撑杆行走极值计算，减速行走需要搜索“测试”修改初始减速条件
-std::vector<std::vector<float>> cal_pole_vault_x_extrem(int M_sup = 500, bool output = true) {
-    std::vector<std::vector<float>> x, y={{},{}};
-    x.push_back(
-        cal_x_extrem(
-            ZombieType::PoleVaulting_Walk, M_sup, 0, {}, {},
-            PositionCalculator::TypeCal::FASTEST,
-            true,false
-    ));
-    x.push_back(
-        cal_x_extrem(
-            ZombieType::PoleVaulting_Walk, M_sup, 0, {}, {},
-            PositionCalculator::TypeCal::SLOWEST,
-            true,false
-    ));
-    for (size_t i = 1; i < x[0].size(); ++i) {
-        y[0].push_back(870.0f - x[0][i]);
-        y[1].push_back(879.0f - x[1][i]);
-    }
-    if (output)
-        write_2dvector_to_csv(y, "output.csv", true);
-    return y;
-}
 
 // 撑杆修正起跳点
 // 坐标修正量:  -(int(x_z) - x_p - 80)*180/179.1666 
@@ -217,7 +200,7 @@ void cal_all_cases(){
 
 int main(){
     cal_all_cases(); return 0;
-    // cal_pole_vault_x_extrem(10001, true);
+    // cal_anim_x_extrem(ZombieType::PoleVaulting_Walk, 10001, true);
 
     int t_ice = 1;
     bool is_slowed = 1;
