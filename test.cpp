@@ -156,7 +156,41 @@ void test_T(){
 }
 
 
-void test_tmp(float x_z, int x_p){
+void test_tmp(){
+    auto z = ZombieData(ZombieType::JackInTheBox);
+    auto arr = z.anim;
+
+    for (const auto& frame : arr)        
+        printf("%f\n", frame);
+    printf("\n");
+
+
+    Reanim reanim(z, 0.68f);
+    CdState state;
+    state.slow_cd = 100000; // 测试用，始终减
+
+    float ans = 0.0f;
+    for (int i = 0; i < 1000; ++i) {
+        auto dx = DxCalculator::get_dx_from_ground(z, reanim, state);
+        reanim.update(state);
+        reanim.wrap();
+        printf("dx: %f, progress: %f\n", dx, reanim.progress);
+        if (ans < dx) ans = dx;
+    }
+    printf("Maximum dx: %f\n", ans);
+    cout << 706.3 - 691 << " " << 15.3;
+    // +88
+    // 952 stay
+    // 953 move
+    // 953 + 88 = 1041
+    // 1042 explode
+    // 1042+110+200 = 1352
+    // 1043 explode 1044 explode
+    // 1353
+
+    // 704.097 - 691 = 13.097
+    // +74
+    // 953 + 74 = 1027
 
 }
 
@@ -167,6 +201,12 @@ int main(){
         {100, }, {}
     );
 //*/
+/*
+    cal_anim_x_extrem(
+        ZombieType::JackInTheBox, 2000, 1
+    );
+*/
+
 
 /*
     cal_digger_x_extrem(
@@ -193,7 +233,7 @@ int main(){
     // test_smash_rate_mt();
     // test_T();
 
-    // test_tmp(PositionCalculator::TypeCal::FASTEST);
+    test_tmp();
 
     return 0;
 }
