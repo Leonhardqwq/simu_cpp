@@ -33,8 +33,7 @@ tmp = info_list[5]
 if tmp == "通常波":   not_flag = True
 else:               not_flag = False
 
-melon_count = int(info_list[7])
-extra_dmg = melon_count * 26
+extra_dmg = int(info_list[6])
 test_N = int(info_list[9])  # a * 10**n
 show_pro = info_list[10] == "是"
 
@@ -74,14 +73,14 @@ for info in info_list:
     ice_t.append(int(info))
 
 splash_infos = []
-info_read = pd.read_excel(file_name, usecols='K', skiprows=2,header=None,na_values='')
+info_read = pd.read_excel(file_name, usecols='K:L', skiprows=2,header=None,na_values='')
 info_read.dropna(inplace=True)
-info_list = info_read.iloc[:,0].tolist()
-for info in info_list:
-    splash_infos.append([int(info), 26])
+info_list = info_read.apply(lambda row: row.tolist(), axis=1).tolist()
+for tmp in info_list:
+    splash_infos.append([int(tmp[0]), int(tmp[1])])
     
 ash_infos = []
-info_read = pd.read_excel(file_name, usecols='M:P', skiprows=2,header=None,na_values='')
+info_read = pd.read_excel(file_name, usecols='N:Q', skiprows=2,header=None,na_values='')
 info_read.dropna(inplace=True)
 info_list = info_read.apply(lambda row: row.tolist(), axis=1).tolist()
 for tmp in info_list:
