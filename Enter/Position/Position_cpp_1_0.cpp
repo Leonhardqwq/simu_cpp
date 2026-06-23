@@ -6,7 +6,7 @@ int main(){
     // test_x(ZombieType::Pogo, 2000, false, {}, {}, PositionCalculator::TypeCal::RANDOM);
     cal_x_extrem(
         config.type, config.M, config.hugewave, 
-        config.ice_t, config.splash_t, 
+        config.ice_t, config.splash_times(),
         PositionCalculator::TypeCal(config.test_type_zombie)
         , true
     );

@@ -28,8 +28,8 @@ public:
   
     // effect param
     std::vector<int> ice_t = {551};
-    std::vector<int> splash_t = {};
-    int melon = 0;
+    std::vector<std::pair<int, int>> splash_infos = {};
+    int extra_dmg = 0;
     
     // timing param
     std::vector<std::vector<int>> ash_infos = {
@@ -75,8 +75,9 @@ public:
         jack_type = j["jack_type"];
 
         ice_t = j["ice_t"].get<std::vector<int>>();
-        splash_t = j["splash_t"].get<std::vector<int>>();
-        melon = j["melon"];
+        splash_infos = j["splash_infos"].get<std::vector<std::pair<int, int>>>();
+        merge_splash_infos();
+        extra_dmg = j["extra_dmg"];
 
         ash_infos = j["ash_infos"].get<std::vector<std::vector<int>>>();
         // ash_time = j["ash_time"];
@@ -136,10 +137,11 @@ public:
         std::cout << "ice_t: ";
         for (int i : ice_t) std::cout << i << " ";
         std::cout << std::endl;
-        std::cout << "splash_t: ";
-        for (int s : splash_t) std::cout << s << " ";
+        std::cout << "splash_infos: ";
+        for (const auto& info : splash_infos)
+            std::cout << "[" << info.first << ", " << info.second << "] ";
         std::cout << std::endl;
-        std::cout << "melon: " << melon << std::endl;
+        std::cout << "extra_dmg: " << extra_dmg << std::endl;
 
         std::cout << "ash_infos: " << std::endl;
         for (const auto& info : ash_infos) {
@@ -162,6 +164,25 @@ public:
         std::cout << "M: " << M << std::endl;
         std::cout << "x_target: " << x_target << std::endl;
     }
+
+    void merge_splash_infos() {
+        size_t write_idx = 0;
+        for (const auto& info : splash_infos) {
+            if (write_idx > 0 && splash_infos[write_idx - 1].first == info.first)
+                splash_infos[write_idx - 1].second += info.second;
+            else
+                splash_infos[write_idx++] = info;
+        }
+        splash_infos.resize(write_idx);
+    }
+
+    std::vector<int> splash_times() const {
+        std::vector<int> times;
+        times.reserve(splash_infos.size());
+        for (const auto& info : splash_infos)
+            times.push_back(info.first);
+        return times;
+    }
 };
 
 class JackSimulator {
@@ -178,7 +199,7 @@ public:
     std::vector<ShroomInfo> shroom_infos;
 
     JackSimulator(const JackConfig& config) : config(config),
-        jack(ZombieType::JackInTheBox, config.M, config.hugewave, config.ice_t, config.splash_t) {
+        jack(ZombieType::JackInTheBox, config.M, config.hugewave, config.ice_t, config.splash_times()) {
         jack.type_cal = PositionCalculator::TypeCal(config.test_type_zombie);
         for (const auto& v : config.plant_list) {
             shrooms.push_back(HitTimeCalculator(PlantType(v[1]), config.M));
@@ -231,7 +252,7 @@ public:
             shroom_works.push_back(shroom_infos[i].work);
         }
 
-        int hp = 335 - config.melon*26;
+        int hp = 335 - config.extra_dmg;
         int ice_idx = 0, splash_idx = 0;
 
         for(int i=1;i<config.M;i++){
@@ -272,9 +293,9 @@ public:
             // if(i==config.ash_time-110 && !config.ash_type_card) return false;
 
             // melon
-            if (splash_idx < config.splash_t.size() && config.splash_t[splash_idx] == static_cast<int>(i)){
+            if (splash_idx < config.splash_infos.size() && config.splash_infos[splash_idx].first == static_cast<int>(i)){
                 if(int(jack.x[i])+jack.z.def_x.first <=800)
-                    hp-=26;
+                    hp -= config.splash_infos[splash_idx].second;
                 splash_idx++;
             }
         }

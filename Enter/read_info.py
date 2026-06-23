@@ -13,7 +13,8 @@ if tmp == "通常波":   not_flag = True
 else:               not_flag = False
 
 extra_dmg = int(info_list[6])
-melon = int(info_list[7])
+melon_count = int(info_list[7])
+extra_dmg += melon_count * 26
 
 tmp = info_list[8]
 if tmp == '杆': zombie_type = 0
@@ -73,12 +74,12 @@ info_list = info_read.iloc[:,0].tolist()
 for info in info_list:
     ice_t.append(int(info))
 
-splash_t = []
+splash_infos = []
 info_read = pd.read_excel(file_name, usecols='K', skiprows=2,header=None,na_values='')
 info_read.dropna(inplace=True)
 info_list = info_read.iloc[:,0].tolist()
 for info in info_list:
-    splash_t.append(int(info))
+    splash_infos.append([int(info), 26])
 
 ash_infos = []
 info_read = pd.read_excel(file_name, usecols='M:P', skiprows=2,header=None,na_values='')
@@ -102,8 +103,7 @@ config_dict = {
   "digger_x_target": digger_x_target,
 
   "ice_t": ice_t,
-  "splash_t": splash_t,
-  "melon": melon,
+  "splash_infos": splash_infos,
   "extra_dmg": extra_dmg,
 
   "ash_infos": ash_infos,

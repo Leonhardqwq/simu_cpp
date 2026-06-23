@@ -12,8 +12,8 @@
   "ice_t": [
     12
   ],
-  "splash_t": [],
-  "melon": 0,
+  "splash_infos": [],
+  "extra_dmg": 0,
   "ash_infos": [],
   "vulnerable_time": 0,
   "plant_list": []

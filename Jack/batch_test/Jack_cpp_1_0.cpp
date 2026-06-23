@@ -17,7 +17,7 @@ void test_ice(int me_st, int me_en, int t_en=550){
             if(i==0) tmp.ice_t = {1};
             else tmp.ice_t = {i};
             tmp.init();
-            tmp.melon += m;
+            tmp.extra_dmg += m * 26;
             all_results[m-me_st].push_back(100.0*work(tmp, 1));
         }
         printf("\n");
@@ -39,8 +39,8 @@ void test_splash_late(int me_st, int me_en, int t_en=1320){
         for(int m=me_st;m<=me_en;m++){
             if(i==170)    all_results.push_back({});
             JackConfig tmp = config;
-            if(m==1) tmp.splash_t = {i};
-            else if(m>=2) tmp.splash_t = {i, std::min(i+998, 1321)}, tmp.melon += m-2;
+            if(m==1) tmp.splash_infos = {{i, 26}};
+            else if(m>=2) tmp.splash_infos = {{i, 26}, {std::min(i+998, 1321), 26}}, tmp.extra_dmg += (m-2) * 26;
             all_results[m-me_st].push_back(100.0*work(tmp, 1));
         }
         printf("\n");
@@ -63,8 +63,8 @@ void test_splash_early(int me_st, int me_en, int t_en=1320){
         for(int m=me_st;m<=me_en;m++){
             if(i==t_st)    all_results.push_back({});
             JackConfig tmp = config;
-            tmp.splash_t = {i};
-            tmp.melon += m-1;
+            tmp.splash_infos = {{i, 26}};
+            tmp.extra_dmg += (m-1) * 26;
             all_results[m-me_st].push_back(100.0*work(tmp, 1));
         }
         printf("\n");
