@@ -3,6 +3,9 @@ __pycache__/
 *.pyc
 .DS_Store
 *.bin
+.venv-release/
+.pyinstaller/
+*/result.txt
 
 universal_table/data
 test
