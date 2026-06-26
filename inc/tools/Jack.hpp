@@ -62,6 +62,14 @@ public:
         json j;
         fin>>j;
 
+        load_from_json(j);
+    }
+
+    JackConfig(const json& j) {
+        load_from_json(j);
+    }
+
+    void load_from_json(const json& j) {
         num_test = j["num_test"];
         show_progress = j["show_progress"];
         test_type_zombie = j["test_type_zombie"];

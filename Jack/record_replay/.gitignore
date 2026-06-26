@@ -1,0 +1,10 @@
+out/
+__pycache__/
+*.pyc
+*.exe
+
+release/.venv/
+release/build/
+release/spec/
+release/__pycache__/
+release/*.pyc
