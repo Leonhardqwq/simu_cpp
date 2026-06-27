@@ -10,6 +10,8 @@ CSV 必须使用绝对路径。正式流程：
 python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\IO-Records\D6E卧虎 fume.csv" build
 # 编辑 scenario_profile.json、shroom_profile.csv
 python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\IO-Records\D6E卧虎 fume.csv" run
+# 修改“可忽略”后，无需重新测试即可重算分路炸率
+python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\IO-Records\D6E卧虎 fume.csv" calc
 ```
 
 默认输出目录为 `Jack/record_replay/out/<csv-stem>/`。使用 `-h` 查看 `--out`、`--num-test`、`--limit`、`--build` 等参数。
@@ -23,7 +25,7 @@ python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\IO-Records" run
 
 目录模式会在根输出目录生成共用 `scenario_profile.json` / `shroom_profile.csv`，每个 CSV 的 `jacks_from_damage.csv` 和 `jack_batch.json` 放在独立子目录。
 
-目录模式可加 `--sum`，在根输出目录额外生成合并后的 `jacks_from_damage.csv`；`来源文件` 位于最后一列。
+目录模式会在根输出目录生成合并后的 `jacks_from_damage.csv`；`来源文件` 位于最后一列。
 
 CSV 使用新版 damage-recorder 输出：
 
@@ -35,13 +37,15 @@ CSV 使用新版 damage-recorder 输出：
 |---|---|
 | `build` | 解析 CSV，生成可编辑配置、完整预览表和 `jack_batch.json`。 |
 | `run` | 先按当前配置重新 build，再测试；每完成一个 case，立即将结果写回摘要。 |
+| `calc` | 只读取现有摘要并重算分路炸率，不解析伤害表、不运行模拟。 |
 
 | 输出文件 | 用途 | 是否编辑 |
 |---|---|---:|
 | `scenario_profile.json` | 全局测试条件及分路设置。 | 是 |
 | `shroom_profile.csv` | 喷曾配置。 | 是 |
-| `jacks_from_damage.csv` | 小丑信息、时机和炸率结果。 | 否 |
+| `jacks_from_damage.csv` | 小丑信息、时机和炸率结果。 | 仅编辑 `可忽略` |
 | `jack_batch.json` | C++ 批量测试输入。 | 否 |
+| `jack_rate_summary.csv` | 按路统计的参与数量和平均炸率。 | 否 |
 
 ## `scenario_profile.json`
 
@@ -108,6 +112,7 @@ CSV 使用新版 damage-recorder 输出：
 |---|---|
 | `炸率` | 炸率，范围 `0~1`。 |
 | `error` | case 失败时的错误信息。 |
+| `可忽略` | 留空时参与统计；填 `1` 时不参与分路炸率统计。 |
 | `僵尸ID`、`僵尸波次`、`僵尸路` | 小丑标识。 |
 | `最后伤害时机` | `僵尸临界后=0` 的最晚伤害记录对应的相对时机。 |
 | `冰时机` | 寒冰菇生成的冰时机，同一时机去重。 |
@@ -120,6 +125,7 @@ CSV 使用新版 damage-recorder 输出：
 跨波时机使用 CSV `绝对时间 - 时间` 推导内部波长，波长最小为 `601`；用户不需要编辑波长文件。
 
 `build` 按当前配置写入时机和 batch，`run` 会先重算再填入结果。
+`jack_rate_summary.csv` 按 `僵尸路` 对有效炸率取平均；空炸率和 `可忽略=1` 的记录不参与。目录模式下 `calc` 同时计算各子目录和根目录合并表。
 
 ## `jack_batch.json`
 

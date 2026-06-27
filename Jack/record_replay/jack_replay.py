@@ -75,8 +75,9 @@ SHROOM_KEY_COLUMNS = ["植物类型", "植物路", "植物列"]
 SHROOM_EDITABLE_COLUMNS = ["启用", "永动", "备注"]
 
 RESULT_COLUMNS = ["炸率", "error"]
+IGNORE_COLUMN = "可忽略"
 SUMMARY_KEY_COLUMNS = ["僵尸波次", "僵尸路", "僵尸ID"]
-SUMMARY_COLUMNS = RESULT_COLUMNS + SUMMARY_KEY_COLUMNS + [
+SUMMARY_COLUMNS = RESULT_COLUMNS + [IGNORE_COLUMN] + SUMMARY_KEY_COLUMNS + [
     "最后伤害时机",
     "冰时机",
     "灰烬信息",
@@ -280,9 +281,35 @@ def summary_row(key: tuple[Any, ...], **computed: Any) -> dict[str, Any]:
 
 
 def write_summary(rows: list[dict[str, Any]], out_dir: Path) -> None:
-    pd.DataFrame(rows, columns=SUMMARY_COLUMNS).to_csv(
-        out_dir / "jacks_from_damage.csv", index=False, encoding="utf-8-sig"
-    )
+    path = out_dir / "jacks_from_damage.csv"
+    summary = preserve_ignored(pd.DataFrame(rows, columns=SUMMARY_COLUMNS), path, SUMMARY_KEY_COLUMNS)
+    summary[SUMMARY_COLUMNS].to_csv(path, index=False, encoding="utf-8-sig")
+
+
+def preserve_ignored(summary: pd.DataFrame, path: Path, keys: list[str]) -> pd.DataFrame:
+    summary[IGNORE_COLUMN] = ""
+    if not path.exists():
+        return summary
+    old = pd.read_csv(path, encoding="utf-8-sig")
+    if IGNORE_COLUMN not in old:
+        return summary
+    return summary.drop(columns=IGNORE_COLUMN).merge(
+        old[keys + [IGNORE_COLUMN]].drop_duplicates(keys), on=keys, how="left"
+    ).fillna({IGNORE_COLUMN: ""})
+
+
+def write_rate_summary(out_dir: Path) -> Path:
+    summary_path = out_dir / "jacks_from_damage.csv"
+    if not summary_path.exists():
+        raise FileNotFoundError(f"Summary not found; run first: {summary_path}")
+    summary = pd.read_csv(summary_path, encoding="utf-8-sig")
+    rates = pd.to_numeric(summary["炸率"], errors="coerce")
+    ignored = pd.to_numeric(summary[IGNORE_COLUMN], errors="coerce").eq(1)
+    valid = summary.loc[rates.notna() & ~ignored, ["僵尸路"]].assign(炸率=rates)
+    result = valid.groupby("僵尸路")["炸率"].agg(参与计算数量="count", 平均炸率="mean").reset_index()
+    path = out_dir / "jack_rate_summary.csv"
+    result.to_csv(path, index=False, encoding="utf-8-sig")
+    return path
 
 
 def case_id_for(csv_path: Path, zombie_wave: int, zombie_row: int, zombie_id: int) -> str:
@@ -391,6 +418,7 @@ def build_cases(
             break
 
     write_summary(summaries, out_dir)
+    write_rate_summary(out_dir)
     write_json(
         out_dir / "jack_batch.json",
         {
@@ -411,8 +439,9 @@ def merge_results_into_summary(out_dir: Path, results_path: Path) -> Path:
     summary.update(results[RESULT_COLUMNS])
     summary = summary.reset_index()
 
-    summary = summary[RESULT_COLUMNS + [column for column in summary if column not in RESULT_COLUMNS]]
+    summary = summary[SUMMARY_COLUMNS]
     summary.to_csv(summary_path, index=False, encoding="utf-8-sig")
+    write_rate_summary(out_dir)
     return summary_path
 
 
@@ -464,8 +493,7 @@ def build_many(args: argparse.Namespace, input_dir: Path, out_dir: Path) -> tupl
         )
         cases.extend(child_cases)
         print(f"Built {len(child_cases)} cases: {csv_path.name} -> {child_out}")
-    if args.sum:
-        write_group_summary(csvs, input_dir, out_dir)
+    write_group_summary(csvs, input_dir, out_dir)
     print("Next: edit scenario/shrooms if needed, then run.")
     return out_dir, cases
 
@@ -476,7 +504,12 @@ def write_group_summary(csvs: list[Path], input_dir: Path, out_dir: Path) -> Non
         df = pd.read_csv(out_dir / safe_stem(csv_path) / "jacks_from_damage.csv", encoding="utf-8-sig")
         df["来源文件"] = csv_path.relative_to(input_dir).as_posix()
         frames.append(df)
-    pd.concat(frames, ignore_index=True).to_csv(out_dir / "jacks_from_damage.csv", index=False, encoding="utf-8-sig")
+    path = out_dir / "jacks_from_damage.csv"
+    summary = preserve_ignored(
+        pd.concat(frames, ignore_index=True), path, ["来源文件"] + SUMMARY_KEY_COLUMNS
+    )
+    summary[SUMMARY_COLUMNS + ["来源文件"]].to_csv(path, index=False, encoding="utf-8-sig")
+    write_rate_summary(out_dir)
 
 
 def build_from_profiles(args: argparse.Namespace) -> tuple[Path, list[dict[str, Any]]]:
@@ -537,14 +570,21 @@ def run_from_profiles(args: argparse.Namespace) -> None:
     else:
         for csv_path in input_csvs(path):
             run_batch(args, out_dir / safe_stem(csv_path))
-        if args.sum:
-            write_group_summary(input_csvs(path), path, out_dir)
+        write_group_summary(input_csvs(path), path, out_dir)
+
+
+def calculate_rates(args: argparse.Namespace) -> None:
+    path = damage_input(args)
+    out_dir = Path(args.out).resolve() if args.out else default_out_dir(path)
+    targets = [out_dir] if path.is_file() else [out_dir / safe_stem(csv) for csv in input_csvs(path)] + [out_dir]
+    for target in targets:
+        print(f"Rate summary: {write_rate_summary(target)}")
 
 
 def add_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("csv_path", help="absolute path to a damage-recorder CSV file or directory")
     parser.add_argument(
-        "command", nargs="?", choices=("build", "run"), default="build",
+        "command", nargs="?", choices=("build", "run", "calc"), default="build",
         help="command to run; defaults to build",
     )
     parser.add_argument("--out", help="output directory; defaults to app/script out/<csv-stem>")
@@ -558,7 +598,6 @@ def add_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--cxx", default="g++", help="C++ compiler used by run when building the replay runner")
     parser.add_argument("--exe", help="path to Jack_record_replay executable")
     parser.add_argument("--build", action="store_true", help="force rebuild of the replay runner before running")
-    parser.add_argument("--sum", action="store_true", help="write merged summary for directory input")
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -571,6 +610,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     if args.command == "run":
         run_from_profiles(args)
+    elif args.command == "calc":
+        calculate_rates(args)
     else:
         build_from_profiles(args)
     return 0

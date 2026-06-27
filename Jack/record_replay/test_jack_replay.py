@@ -15,6 +15,7 @@ from jack_replay import (
     ash_info,
     build_cases,
     build_from_profiles,
+    calculate_rates,
     default_row_settings,
     default_base_config,
     default_runner_path,
@@ -27,6 +28,7 @@ from jack_replay import (
     summary_row,
     summarize_shrooms,
     wave_lengths,
+    write_rate_summary,
 )
 
 
@@ -41,6 +43,7 @@ def main() -> None:
     assert merge_splash_infos([(20, 26), (10, 80), (20, 40)]) == [[10, 80], [20, 66]]
     assert parse_args([r"D:\damage.csv"]).command == "build"
     assert parse_args([r"D:\damage.csv", "run"]).command == "run"
+    assert parse_args([r"D:\damage.csv", "calc"]).command == "calc"
     assert ash_info(100, "玉米加农炮", "") == (100, 0, -1000, 1000)
     assert ash_info(100, "", "玉米炮") == (100, 0, -1000, 1000)
     assert ash_info(100, "缠绕海藻", "") == (100, 1, -1000, 1000)
@@ -52,6 +55,7 @@ def main() -> None:
     assert SHROOM_COLUMNS == ["启用", "永动", "植物路", "植物列", "植物类型", "备注"]
     assert all(column not in SUMMARY_COLUMNS for column in ROW_DEFAULTS)
     assert all(column not in SUMMARY_COLUMNS for column in ["CI_lo", "CI_hi", "测试次数", "测试用时"])
+    assert SUMMARY_COLUMNS[:3] == ["炸率", "error", "可忽略"]
     assert SUMMARY_COLUMNS[-7:] == ["最后伤害时机", "冰时机", "灰烬信息", "额外伤害", "冰瓜伤害", "溅射信息", "警告数量"]
     shrooms = pd.DataFrame(
         {"启用": [1, 1, 1], "植物路": [2, 3, 4], "植物列": [7, 6, 7]}
@@ -105,8 +109,29 @@ def main() -> None:
             ))
         built = pd.read_csv(build_out / "jacks_from_damage.csv", encoding="utf-8-sig")
         assert (build_out / "jack_batch.json").exists()
+        assert (build_out / "jack_rate_summary.csv").exists()
         assert int(built.loc[0, "最后伤害时机"]) == 3100
         assert int(built.loc[0, "额外伤害"]) == 120
+        built.loc[0, "可忽略"] = 1
+        built.to_csv(build_out / "jacks_from_damage.csv", index=False, encoding="utf-8-sig")
+        with redirect_stdout(StringIO()):
+            build_from_profiles(SimpleNamespace(
+                csv_path=str(csv_path), out=str(build_out), base_config=str(base_config),
+                num_test=None, limit=None,
+            ))
+        assert pd.read_csv(build_out / "jacks_from_damage.csv", encoding="utf-8-sig").loc[0, "可忽略"] == 1
+
+        rate_out = tmp / "rate_out"
+        rate_out.mkdir()
+        pd.DataFrame({
+            "炸率": [0.2, 0.4, 0.9, ""],
+            "可忽略": ["", "", 1, ""],
+            "僵尸路": [1, 1, 1, 2],
+        }).to_csv(rate_out / "jacks_from_damage.csv", index=False, encoding="utf-8-sig")
+        rates = pd.read_csv(write_rate_summary(rate_out), encoding="utf-8-sig")
+        assert rates.to_dict("records") == [{"僵尸路": 1, "参与计算数量": 2, "平均炸率": 0.3}]
+        with redirect_stdout(StringIO()):
+            calculate_rates(SimpleNamespace(csv_path=str(csv_path), out=str(rate_out)))
 
         batch_input = tmp / "batch_input"
         batch_input.mkdir()
@@ -122,7 +147,6 @@ def main() -> None:
                 base_config=str(base_config),
                 num_test=None,
                 limit=None,
-                sum=True,
             ))
         assert (batch_out / "scenario_profile.json").exists()
         assert (batch_out / "shroom_profile.csv").exists()
@@ -131,6 +155,24 @@ def main() -> None:
         group_summary = pd.read_csv(batch_out / "jacks_from_damage.csv", encoding="utf-8-sig")
         assert group_summary.columns[-1] == "来源文件"
         assert set(group_summary["来源文件"]) == {"damage.csv", "damage two.csv"}
+        group_summary.loc[0, "可忽略"] = 1
+        group_summary.to_csv(batch_out / "jacks_from_damage.csv", index=False, encoding="utf-8-sig")
+        with redirect_stdout(StringIO()):
+            build_from_profiles(SimpleNamespace(
+                csv_path=str(batch_input), out=str(batch_out), base_config=str(base_config),
+                num_test=None, limit=None,
+            ))
+        group_summary = pd.read_csv(batch_out / "jacks_from_damage.csv", encoding="utf-8-sig")
+        child_summary = pd.read_csv(
+            batch_out / safe_stem(batch_csv) / "jacks_from_damage.csv", encoding="utf-8-sig"
+        )
+        assert group_summary.loc[0, "可忽略"] == 1
+        assert pd.isna(child_summary.loc[0, "可忽略"])
+        group_summary["炸率"] = [0.2, 0.4]
+        group_summary.to_csv(batch_out / "jacks_from_damage.csv", index=False, encoding="utf-8-sig")
+        with redirect_stdout(StringIO()):
+            calculate_rates(SimpleNamespace(csv_path=str(batch_input), out=str(batch_out)))
+        assert pd.read_csv(batch_out / "jack_rate_summary.csv", encoding="utf-8-sig").loc[0, "平均炸率"] == 0.4
 
         cases = build_cases(
             df,
