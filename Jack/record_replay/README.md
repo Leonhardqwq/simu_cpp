@@ -7,11 +7,11 @@
 CSV 必须使用绝对路径。正式流程：
 
 ```powershell
-python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\IO-Records\D6E卧虎 fume.csv" build
+python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\DE46764\Records-2026-06-26-18-43-38.csv" build
 # 编辑 scenario_profile.json、shroom_profile.csv
-python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\IO-Records\D6E卧虎 fume.csv" run
+python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\DE46764\Records-2026-06-26-18-43-38.csv" run
 # 修改“可忽略”后，无需重新测试即可重算分路炸率
-python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\IO-Records\D6E卧虎 fume.csv" calc
+python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\DE46764\Records-2026-06-26-18-43-38.csv" calc
 ```
 
 默认输出目录为 `Jack/record_replay/out/<csv-stem>/`。使用 `-h` 查看 `--out`、`--num-test`、`--limit`、`--build` 等参数。
@@ -19,8 +19,8 @@ python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\IO-Records\D6E卧虎 fume
 输入也可以是 CSV 所在目录：
 
 ```powershell
-python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\IO-Records" build
-python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\IO-Records" run
+python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\DE46764" build
+python Jack\record_replay\jack_replay.py "D:\AAA_LH_SL\DE46764" run
 ```
 
 目录模式会在根输出目录生成共用 `scenario_profile.json` / `shroom_profile.csv`，每个 CSV 的 `jacks_from_damage.csv` 和 `jack_batch.json` 放在独立子目录。
@@ -157,8 +157,8 @@ Jack/record_replay/release/JackRecordReplay.exe
 打包后的用法：
 
 ```powershell
-Jack\record_replay\release\JackRecordReplay.exe "D:\AAA_LH_SL\IO-Records\Records.csv" build
-Jack\record_replay\release\JackRecordReplay.exe "D:\AAA_LH_SL\IO-Records\Records.csv" run
+Jack\record_replay\release\JackRecordReplay.exe "D:\AAA_LH_SL\DE46764\Records-2026-06-26-18-43-38.csv" build
+Jack\record_replay\release\JackRecordReplay.exe "D:\AAA_LH_SL\DE46764\Records-2026-06-26-18-43-38.csv" run
 ```
 
 ## 自检
