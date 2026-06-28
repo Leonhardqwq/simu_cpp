@@ -233,6 +233,7 @@ def summarize_shrooms(df: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
         fresh.update(old[SHROOM_EDITABLE_COLUMNS])
         fresh = fresh.reset_index()[SHROOM_COLUMNS]
 
+    fresh[SHROOM_KEY_COLUMNS[1:]] = fresh[SHROOM_KEY_COLUMNS[1:]].astype(int)
     fresh = fresh.sort_values(["植物路", "植物列", "植物类型"])
     fresh.to_csv(path, index=False, encoding="utf-8-sig")
     return fresh
