@@ -1,9 +1,4 @@
-"""Build and run Jack replay cases from damage-recorder CSV files.
-
-The script lives in simu_cpp and treats IO-Records as read-only input.
-It accepts an absolute CSV file or directory, then writes editable profiles,
-generated Jack case JSON, and optional simulation results under an output directory.
-"""
+"""Build and run Zomboni replay cases from damage-recorder CSV files."""
 
 import argparse
 import json
@@ -24,7 +19,6 @@ if str(ROOT) not in sys.path:
 from utils.record_replay_common import (
     IGNORE_COLUMN,
     SHROOM_COLUMNS,
-    SHROOM_TYPES,
     SOURCE_COLUMN,
     damage_input as checked_damage_input,
     input_csvs,
@@ -32,11 +26,23 @@ from utils.record_replay_common import (
     read_damage_csv,
     read_json,
     safe_stem,
-    shroom_list_for_row as plant_list_for_row,
+    shroom_list_for_row,
     summarize_shrooms,
     write_json,
     write_rate_summary as common_write_rate_summary,
 )
+
+
+ZOMBONI = "冰车"
+ICE_MELON = "冰瓜"
+SPIKE_TYPES = {"地刺", "地刺王"}
+ZOMBONI_UNIT_COLUMNS = ["zombie_wave", "zombie_row", "zombie_id"]
+SUMMARY_KEY_COLUMNS = ["僵尸波次", "僵尸路"]
+RESULT_COLUMNS = ["碾率", "error"]
+MELON_INFO_COLUMN = "冰瓜信息[冰瓜行,冰瓜列,最小溅射空间,最大溅射空间]"
+SUMMARY_COLUMNS = RESULT_COLUMNS + [IGNORE_COLUMN] + SUMMARY_KEY_COLUMNS + [MELON_INFO_COLUMN]
+SCENARIO_DEFAULTS = {"num_test": 10000, "test_type_plant": 0}
+SCENARIO_KEYS = list(SCENARIO_DEFAULTS)
 
 
 def is_frozen() -> bool:
@@ -52,53 +58,11 @@ def resource_dir() -> Path:
 
 
 def default_base_config() -> Path:
-    return resource_dir() / "Jack" / "jack_config.json" if is_frozen() else ROOT / "Jack" / "jack_config.json"
+    return resource_dir() / "Zomboni" / "zomboni_config.json" if is_frozen() else ROOT / "Zomboni" / "zomboni_config.json"
 
 
 def default_runner_path() -> Path:
-    return resource_dir() / "Jack_record_replay.exe" if is_frozen() else HERE / "Jack_record_replay.exe"
-
-
-JACK_GROUP_COLUMNS = ["zombie_wave", "zombie_row", "zombie_id"]
-
-JACK = "小丑"
-ICE_MELON = "冰瓜"
-ICE_SHROOM = "寒冰菇"
-COB_CANNON = "玉米加农炮"
-COB_PROJECTILE = "玉米炮"
-ASH_RANGE = [-1000, 1000]
-
-SCENARIO_DEFAULTS = {
-    "num_test": 10000,
-    "scene": 1,
-    "vulnerable_time": 0,
-    "test_type_zombie": 0,
-    "test_type_plant": 0,
-}
-SCENARIO_KEYS = list(SCENARIO_DEFAULTS)
-FORCE_DEFAULT_SCENARIO_KEYS = {
-    "num_test",
-    "test_type_zombie",
-    "test_type_plant",
-    "vulnerable_time",
-}
-ROW_DEFAULTS = {
-    "defense_type": 0,
-    "jack_type": 0,
-    "ash_infos": [],
-}
-
-RESULT_COLUMNS = ["炸率", "error"]
-SUMMARY_KEY_COLUMNS = ["僵尸波次", "僵尸路", "僵尸ID"]
-SUMMARY_COLUMNS = RESULT_COLUMNS + [IGNORE_COLUMN] + SUMMARY_KEY_COLUMNS + [
-    "最后伤害时机",
-    "冰时机",
-    "灰烬信息",
-    "额外伤害",
-    "冰瓜伤害",
-    "溅射信息",
-    "警告数量",
-]
+    return resource_dir() / "Zomboni_record_replay.exe" if is_frozen() else HERE / "Zomboni_record_replay.exe"
 
 
 def damage_input(args: argparse.Namespace) -> Path:
@@ -113,43 +77,39 @@ def replay_paths(args: argparse.Namespace) -> tuple[Path, Path]:
     csv_path = damage_input(args)
     if not csv_path.is_file():
         raise SystemExit(f"CSV path must be a file for single-file mode: {csv_path}")
-    if args.out:
-        out_dir = Path(args.out).resolve()
-    else:
-        out_dir = default_out_dir(csv_path)
-    return csv_path, out_dir
+    return csv_path, Path(args.out).resolve() if args.out else default_out_dir(csv_path)
 
 
-def wave_lengths(df: pd.DataFrame) -> dict[int, int]:
-    starts = (df["absolute_time"].astype(int) - df["time"].astype(int)).groupby(df["wave"].astype(int)).min()
-    return {
-        int(wave): max(int(starts[wave + 1] - start), 601)
-        for wave, start in starts.items()
-        if wave + 1 in starts
-    }
+def valid_zomboni_damage(df: pd.DataFrame) -> pd.DataFrame:
+    kept = []
+    zdf = df[df["zombie_type"].astype(str).eq(ZOMBONI)]
+    for _, group in zdf.groupby(ZOMBONI_UNIT_COLUMNS, sort=True):
+        killed = group["damage"].astype(int).ge(1800).any()
+        spiked = group["plant_type"].astype(str).isin(SPIKE_TYPES).any()
+        if not killed and not spiked:
+            kept.append(group)
+    return pd.concat(kept, ignore_index=True) if kept else zdf.iloc[0:0].copy()
 
 
-def replay_time(record: Any, zombie_wave: int, wave_lengths: dict[int, int]) -> int | None:
-    damage_wave = int(record.wave)
-    if damage_wave < zombie_wave:
-        return None
-    waves = range(zombie_wave, damage_wave)
-    if any(wave not in wave_lengths for wave in waves):
-        return None
-    return int(record.time) + sum(wave_lengths[wave] for wave in waves)
+def zomboni_rows(df: pd.DataFrame) -> list[int]:
+    valid = valid_zomboni_damage(df)
+    return sorted(int(row) for row in valid["zombie_row"].unique())
 
 
-def default_row_settings(zombie_row: int, shrooms: pd.DataFrame) -> dict[str, Any]:
-    candidates = shrooms[
-        shrooms["启用"].eq(1) & shrooms["植物路"].between(zombie_row - 1, zombie_row + 1)
-    ].assign(_priority=lambda plant: plant["植物路"].map({zombie_row: 0, zombie_row - 1: 1, zombie_row + 1: 2}))
-    target = candidates.sort_values(["植物列", "_priority"], ascending=[False, True]).iloc[0]
-    relative_row = int(target["植物路"]) - zombie_row
-    return {
-        "boom_type": {0: 2, -1: 1, 1: 0}[relative_row],
-        "boom_col": int(target["植物列"]),
-        **ROW_DEFAULTS,
-    }
+def melon_cols_by_row(df: pd.DataFrame) -> dict[int, set[int]]:
+    melons: dict[int, set[int]] = {}
+    hits = df.loc[df["projectile_type"].astype(str).eq(ICE_MELON), ["plant_row", "plant_col"]].dropna()
+    for row in hits.itertuples(index=False):
+        melons.setdefault(int(row.plant_row), set()).add(int(row.plant_col))
+    return melons
+
+
+def default_row_settings(row: int, shrooms: pd.DataFrame, melons: dict[int, set[int]], base_col: int) -> dict[str, int]:
+    shroom_cols = shrooms.loc[
+        shrooms["启用"].eq(1) & shrooms["植物路"].eq(row), "植物列"
+    ].astype(int).tolist()
+    cols = shroom_cols + list(melons.get(row, set()))
+    return {"crush_col": max(cols) if cols else base_col, "crush_type": 0}
 
 
 def load_or_create_scenario(
@@ -158,59 +118,63 @@ def load_or_create_scenario(
     num_test: int | None,
     rows: list[int],
     shrooms: pd.DataFrame,
+    melons: dict[int, set[int]],
 ) -> dict[str, Any]:
     path = out_dir / "scenario_profile.json"
     if path.exists():
         scenario = read_json(path)
         saved_rows = scenario["row_settings"]
     else:
-        base = read_json(base_config)
-        scenario = {
-            key: default if key in FORCE_DEFAULT_SCENARIO_KEYS else base[key]
-            for key, default in SCENARIO_DEFAULTS.items()
-        }
+        scenario = dict(SCENARIO_DEFAULTS)
         saved_rows = {}
 
     if num_test is not None:
         scenario["num_test"] = int(num_test)
+    base_col = int(read_json(base_config)["crush_col"])
     scenario = {key: scenario[key] for key in SCENARIO_KEYS}
     scenario["row_settings"] = {
-        str(row): saved_rows[str(row)] if str(row) in saved_rows else default_row_settings(row, shrooms)
+        str(row): saved_rows[str(row)] if str(row) in saved_rows else default_row_settings(row, shrooms, melons, base_col)
         for row in rows
     }
     write_json(path, scenario)
     return scenario
 
 
-def merge_splash_infos(items: list[tuple[int, int]]) -> list[list[int]]:
-    merged: dict[int, int] = {}
-    for time, damage in items:
-        merged[time] = merged.get(time, 0) + damage
-    return [[time, merged[time]] for time in sorted(merged)]
+def select_melon_space(values: list[int]) -> int:
+    return min(values)
 
 
-def ash_info(time: int, plant_type: str, projectile_type: str) -> tuple[int, int, int, int]:
-    return (time, 0 if projectile_type == COB_PROJECTILE or plant_type == COB_CANNON else 1, ASH_RANGE[0], ASH_RANGE[1])
+def melon_info_for_group(group: pd.DataFrame, crush_col: int, crush_type: int) -> tuple[list[list[int]], list[list[int]]]:
+    spaces: dict[tuple[int, int], list[int]] = {}
+    hits = group.loc[group["projectile_type"].astype(str).eq(ICE_MELON)].dropna(subset=["plant_row", "plant_col"])
+    first_hits = hits.sort_values(["zombie_id", "plant_row", "plant_col", "absolute_time", "time"]).groupby(
+        ["zombie_id", "plant_row", "plant_col"], sort=True
+    ).first().reset_index()
+
+    for hit in first_hits.itertuples(index=False):
+        key = (int(hit.plant_row), int(hit.plant_col))
+        space = int(float(hit.zombie_x)) - (80 * crush_col + (40 if crush_type != 2 else -40))
+        spaces.setdefault(key, []).append(space)
+
+    infos = [[row, col, min(values), max(values)] for (row, col), values in sorted(spaces.items())]
+    melon_list = [[select_melon_space(values), 2, 1] for _, values in sorted(spaces.items())]
+    return infos, melon_list
 
 
-def jack_groups(df: pd.DataFrame):
-    return df[df["zombie_type"].astype(str).eq(JACK)].groupby(JACK_GROUP_COLUMNS, sort=True)
+def case_id_for(csv_path: Path, zombie_wave: int, zombie_row: int) -> str:
+    stem = re.sub(r"\s+", "_", csv_path.stem)
+    return f"{stem}_wave{zombie_wave:02d}_row{zombie_row}"
 
 
-def jack_rows(df: pd.DataFrame) -> list[int]:
-    return sorted(int(row) for row in df.loc[df["zombie_type"].eq(JACK), "zombie_row"].unique())
-
-
-def summary_row(key: tuple[Any, ...], **computed: Any) -> dict[str, Any]:
-    zombie_wave, zombie_row, zombie_id = map(int, key)
+def summary_row(key: tuple[Any, ...], melon_info: list[list[int]]) -> dict[str, Any]:
+    zombie_wave, zombie_row = map(int, key)
     row = dict.fromkeys(SUMMARY_COLUMNS, "")
-    row.update({"僵尸波次": zombie_wave, "僵尸路": zombie_row, "僵尸ID": zombie_id})
-    row.update(computed)
+    row.update({"僵尸波次": zombie_wave, "僵尸路": zombie_row, MELON_INFO_COLUMN: json.dumps(melon_info, ensure_ascii=False)})
     return row
 
 
 def write_summary(rows: list[dict[str, Any]], out_dir: Path) -> None:
-    path = out_dir / "jacks_from_damage.csv"
+    path = out_dir / "zombonis_from_damage.csv"
     summary = preserve_ignored(pd.DataFrame(rows, columns=SUMMARY_COLUMNS), path, SUMMARY_KEY_COLUMNS)
     summary[SUMMARY_COLUMNS].to_csv(path, index=False, encoding="utf-8-sig")
 
@@ -218,18 +182,13 @@ def write_summary(rows: list[dict[str, Any]], out_dir: Path) -> None:
 def write_rate_summary(out_dir: Path) -> Path:
     return common_write_rate_summary(
         out_dir,
-        "jacks_from_damage.csv",
-        "jack_rate_summary.csv",
-        "炸率",
+        "zombonis_from_damage.csv",
+        "zomboni_rate_summary.csv",
+        "碾率",
         "僵尸路",
-        "参与计算数量",
-        "平均炸率",
+        "参与计算波次",
+        "平均碾率",
     )
-
-
-def case_id_for(csv_path: Path, zombie_wave: int, zombie_row: int, zombie_id: int) -> str:
-    stem = re.sub(r"\s+", "_", csv_path.stem)
-    return f"{stem}_wave{zombie_wave:02d}_row{zombie_row}_id{zombie_id}"
 
 
 def build_cases(
@@ -238,104 +197,44 @@ def build_cases(
     out_dir: Path,
     scenario: dict[str, Any],
     shrooms: pd.DataFrame,
-    wave_lengths: dict[int, int],
     limit: int | None,
 ) -> list[dict[str, Any]]:
     cases: list[dict[str, Any]] = []
     summaries: list[dict[str, Any]] = []
+    valid = valid_zomboni_damage(df)
 
-    for key, group in jack_groups(df):
-        zombie_wave, zombie_row, zombie_id = map(int, key)
+    for key, group in valid.groupby(["zombie_wave", "zombie_row"], sort=True):
+        zombie_wave, zombie_row = map(int, key)
         settings = scenario["row_settings"][str(zombie_row)]
-        ice_times: set[int] = set()
-        splashes: list[tuple[int, int]] = []
-        auto_ashes: set[tuple[int, int, int, int]] = set()
-        precritical_melon_damage = 0
-        extra_dmg = 0
-        last_damage_time: int | None = None
-        warning_count = 0
-
-        for record in group.sort_values(["wave", "time"]).itertuples(index=False):
-            time = replay_time(record, zombie_wave, wave_lengths)
-            if time is None:
-                warning_count += 1
-                continue
-            damage = int(record.damage)
-            plant_type = str(record.plant_type)
-            projectile_type = str(record.projectile_type)
-            if int(record.zombie_below_critical) == 0:
-                last_damage_time = time if last_damage_time is None else max(last_damage_time, time)
-                if projectile_type == ICE_MELON:
-                    precritical_melon_damage += damage
-                elif (
-                    plant_type != ICE_SHROOM
-                    and plant_type not in SHROOM_TYPES
-                    and damage < 1800
-                ):
-                    extra_dmg += damage
-            if damage >= 1800:
-                auto_ashes.add(ash_info(time, plant_type, projectile_type))
-            if plant_type == ICE_SHROOM:
-                ice_times.add(time)
-            elif projectile_type == ICE_MELON:
-                splashes.append((time, damage))
-
-        ice_t = sorted(ice_times)
-        splash_infos = merge_splash_infos(splashes)
-        ash_infos = [list(info) for info in sorted(auto_ashes)] + settings["ash_infos"]
-        config = {key: scenario[key] for key in SCENARIO_KEYS} | {
-            "hugewave": zombie_wave in (10, 20),
-            "boom_type": settings["boom_type"],
-            "boom_col": settings["boom_col"],
-            "defense_type": settings["defense_type"],
-            "jack_type": settings["jack_type"],
-            "ash_infos": ash_infos,
-            "ice_t": ice_t,
-            "splash_infos": splash_infos,
-            "extra_dmg": extra_dmg,
-            "plant_list": plant_list_for_row(shrooms, zombie_row),
-        }
-        event_times = (
-            ice_t
-            + [time for time, _ in splash_infos]
-            + [int(info[0]) for info in config["ash_infos"]]
-            + [int(config["vulnerable_time"])]
+        melon_info, melon_list = melon_info_for_group(
+            group, int(settings["crush_col"]), int(settings["crush_type"])
         )
-
+        config = {key: scenario[key] for key in SCENARIO_KEYS} | {
+            "show_progress": False,
+            "crush_col": int(settings["crush_col"]),
+            "crush_type": int(settings["crush_type"]),
+            "shroom_list": shroom_list_for_row(shrooms, zombie_row),
+            "melon_list": melon_list,
+        }
         cases.append(
             {
-                "case_id": case_id_for(csv_path, zombie_wave, zombie_row, zombie_id),
+                "case_id": case_id_for(csv_path, zombie_wave, zombie_row),
                 "meta": {
                     "source_csv": str(csv_path),
-                    "zombie_id": zombie_id,
                     "zombie_wave": zombie_wave,
                     "zombie_row": zombie_row,
                 },
                 "config": config,
-                "M_min": max(2600, max(event_times) + 600),
             }
         )
-        summaries.append(
-            summary_row(
-                key,
-                **{
-                    "最后伤害时机": "" if last_damage_time is None else last_damage_time,
-                    "冰时机": json.dumps(ice_t, ensure_ascii=False),
-                    "灰烬信息": json.dumps(ash_infos, ensure_ascii=False),
-                    "额外伤害": extra_dmg,
-                    "冰瓜伤害": precritical_melon_damage,
-                    "溅射信息": json.dumps(splash_infos, ensure_ascii=False),
-                    "警告数量": warning_count,
-                },
-            )
-        )
+        summaries.append(summary_row(key, melon_info))
         if limit is not None and len(cases) >= limit:
             break
 
     write_summary(summaries, out_dir)
     write_rate_summary(out_dir)
     write_json(
-        out_dir / "jack_batch.json",
+        out_dir / "zomboni_batch.json",
         {
             "source_csv": str(csv_path),
             "generated_by": str(Path(__file__).resolve()),
@@ -346,15 +245,13 @@ def build_cases(
 
 
 def merge_results_into_summary(out_dir: Path, results_path: Path) -> Path:
-    summary_path = out_dir / "jacks_from_damage.csv"
+    summary_path = out_dir / "zombonis_from_damage.csv"
     summary = pd.read_csv(summary_path, encoding="utf-8-sig")
     results = pd.read_csv(results_path, encoding="utf-8-sig")
     summary = summary.set_index(SUMMARY_KEY_COLUMNS)
     results = results.set_index(SUMMARY_KEY_COLUMNS)
     summary.update(results[RESULT_COLUMNS])
-    summary = summary.reset_index()
-
-    summary = summary[SUMMARY_COLUMNS]
+    summary = summary.reset_index()[SUMMARY_COLUMNS]
     summary.to_csv(summary_path, index=False, encoding="utf-8-sig")
     write_rate_summary(out_dir)
     return summary_path
@@ -371,16 +268,14 @@ def build_one(
     df = read_damage_csv(csv_path)
     shrooms = shrooms if shrooms is not None else summarize_shrooms(df, out_dir)
     scenario = scenario or load_or_create_scenario(
-        out_dir, Path(args.base_config).resolve(), args.num_test, jack_rows(df), shrooms
+        out_dir, Path(args.base_config).resolve(), args.num_test, zomboni_rows(df), shrooms, melon_cols_by_row(df)
     )
-    cases = build_cases(
-        df, csv_path, out_dir, scenario, shrooms, wave_lengths(df), args.limit
-    )
+    cases = build_cases(df, csv_path, out_dir, scenario, shrooms, args.limit)
     print(f"CSV: {csv_path}")
     print(f"Output: {out_dir}")
     print(f"Built cases: {len(cases)}")
-    print(f"Summary: {out_dir / 'jacks_from_damage.csv'}")
-    print(f"Batch: {out_dir / 'jack_batch.json'}")
+    print(f"Summary: {out_dir / 'zombonis_from_damage.csv'}")
+    print(f"Batch: {out_dir / 'zomboni_batch.json'}")
     return cases
 
 
@@ -390,9 +285,9 @@ def build_many(args: argparse.Namespace, input_dir: Path, out_dir: Path) -> tupl
     all_damage = pd.concat(frames, ignore_index=True)
     out_dir.mkdir(parents=True, exist_ok=True)
     shrooms = summarize_shrooms(all_damage, out_dir)
-    rows = sorted({row for frame in frames for row in jack_rows(frame)})
+    rows = sorted({row for frame in frames for row in zomboni_rows(frame)})
     scenario = load_or_create_scenario(
-        out_dir, Path(args.base_config).resolve(), args.num_test, rows, shrooms
+        out_dir, Path(args.base_config).resolve(), args.num_test, rows, shrooms, melon_cols_by_row(all_damage)
     )
 
     cases: list[dict[str, Any]] = []
@@ -403,9 +298,7 @@ def build_many(args: argparse.Namespace, input_dir: Path, out_dir: Path) -> tupl
     for csv_path, frame in zip(csvs, frames):
         child_out = out_dir / safe_stem(csv_path)
         child_out.mkdir(parents=True, exist_ok=True)
-        child_cases = build_cases(
-            frame, csv_path, child_out, scenario, shrooms, wave_lengths(frame), args.limit
-        )
+        child_cases = build_cases(frame, csv_path, child_out, scenario, shrooms, args.limit)
         cases.extend(child_cases)
         print(f"Built {len(child_cases)} cases: {csv_path.name} -> {child_out}")
     write_group_summary(csvs, input_dir, out_dir)
@@ -416,10 +309,10 @@ def build_many(args: argparse.Namespace, input_dir: Path, out_dir: Path) -> tupl
 def write_group_summary(csvs: list[Path], input_dir: Path, out_dir: Path) -> None:
     frames = []
     for csv_path in csvs:
-        df = pd.read_csv(out_dir / safe_stem(csv_path) / "jacks_from_damage.csv", encoding="utf-8-sig")
+        df = pd.read_csv(out_dir / safe_stem(csv_path) / "zombonis_from_damage.csv", encoding="utf-8-sig")
         df[SOURCE_COLUMN] = csv_path.relative_to(input_dir).as_posix()
         frames.append(df)
-    path = out_dir / "jacks_from_damage.csv"
+    path = out_dir / "zombonis_from_damage.csv"
     summary = preserve_ignored(
         pd.concat(frames, ignore_index=True), path, [SOURCE_COLUMN] + SUMMARY_KEY_COLUMNS
     )
@@ -441,28 +334,26 @@ def build_from_profiles(args: argparse.Namespace) -> tuple[Path, list[dict[str, 
 
 
 def build_runner(args: argparse.Namespace) -> Path:
-    source = HERE / "Jack_record_replay.cpp"
+    source = HERE / "Zomboni_record_replay.cpp"
     executable = Path(args.exe).resolve() if args.exe else source.with_suffix(".exe")
-    subprocess.run(
-        [args.cxx, "-std=c++17", "-O2", str(source), "-o", str(executable)], cwd=ROOT, check=True
-    )
+    subprocess.run([args.cxx, "-std=c++17", "-O2", str(source), "-o", str(executable)], cwd=ROOT, check=True)
     return executable
 
 
 def run_batch(args: argparse.Namespace, out_dir: Path | None = None) -> Path:
     if out_dir is None:
         _, out_dir = replay_paths(args)
-    batch_path = out_dir / "jack_batch.json"
-    results_path = out_dir / ".jack_results.tmp.csv"
-    single_case_path = out_dir / ".jack_single_case.tmp.json"
+    batch_path = out_dir / "zomboni_batch.json"
+    results_path = out_dir / ".zomboni_results.tmp.csv"
+    single_case_path = out_dir / ".zomboni_single_case.tmp.json"
     executable = Path(args.exe).resolve() if args.exe else default_runner_path()
     if (args.build or not executable.exists()) and not is_frozen():
         executable = build_runner(args)
     if not executable.exists():
-        raise FileNotFoundError(f"Jack_record_replay runner not found: {executable}")
+        raise FileNotFoundError(f"Zomboni_record_replay runner not found: {executable}")
 
     cases = read_json(batch_path)["cases"]
-    summary_path = out_dir / "jacks_from_damage.csv"
+    summary_path = out_dir / "zombonis_from_damage.csv"
     try:
         for index, case in enumerate(cases, start=1):
             write_json(single_case_path, {"cases": [case]})
@@ -506,12 +397,12 @@ def add_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--base-config",
         default=str(default_base_config()),
-        help="base Jack config used only when scenario_profile.json is first created",
+        help="base Zomboni config used only when scenario_profile.json is first created",
     )
     parser.add_argument("--num-test", type=int, help="override scenario_profile.json num_test for this generation")
-    parser.add_argument("--limit", type=int, help="generate only the first N jack cases, useful for smoke tests")
+    parser.add_argument("--limit", type=int, help="generate only the first N zomboni cases, useful for smoke tests")
     parser.add_argument("--cxx", default="g++", help="C++ compiler used by run when building the replay runner")
-    parser.add_argument("--exe", help="path to Jack_record_replay executable")
+    parser.add_argument("--exe", help="path to Zomboni_record_replay executable")
     parser.add_argument("--build", action="store_true", help="force rebuild of the replay runner before running")
 
 
